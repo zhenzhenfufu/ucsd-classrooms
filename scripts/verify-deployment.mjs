@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { setTimeout } from "node:timers/promises";
 
-const site = new URL(process.argv[2] ?? "https://wenhaoquestion.github.io/ucsd-classrooms/");
+const site = new URL(process.argv[2] ?? "https://zhenzhenfufu.github.io/ucsd-classrooms/");
 const revision = process.env.GITHUB_SHA;
 if (!revision) throw new Error("GITHUB_SHA is required to verify the published revision.");
 const deadline = Date.now() + 300_000;

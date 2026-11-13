@@ -29,7 +29,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 process.chdir(root);
 
 const serve = process.argv.includes("--serve");
-const SITE = "https://wenhaoquestion.github.io/ucsd-classrooms/";
+const SITE = "https://zhenzhenfufu.github.io/ucsd-classrooms/";
 
 /** @type {esbuild.BuildOptions} */
 const options = {

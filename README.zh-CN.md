@@ -4,7 +4,7 @@
 
 浏览加州大学圣地亚哥分校（UC San Diego）的教室、查询课程安排，并通过 3D 地图探索校园楼宇。
 
-**[打开网站](https://wenhaoquestion.github.io/ucsd-classrooms/)** · **[探索 YORK 的 3D 室内图](https://wenhaoquestion.github.io/ucsd-classrooms/?building=YORK)** · **[室内地图技术文档（英文）](docs/indoor-geometry.md)**
+**[打开网站](https://zhenzhenfufu.github.io/ucsd-classrooms/)** · **[探索 YORK 的 3D 室内图](https://zhenzhenfufu.github.io/ucsd-classrooms/?building=YORK)** · **[室内地图技术文档（英文）](docs/indoor-geometry.md)**
 
 ![York Hall 的 3D 室内地图：楼层分离展示，并标注教室使用状态](static/open-graph.png)
 
@@ -31,17 +31,17 @@
 结果区分“课表未安排课程的教室”和“实时可预约的 Geisel 自习室”；时间以圣地亚哥时区、周一至周日为准。
 缺失数据会显示无法确认，不会被算作空闲。点击结果可查看对应日期和时间的房间。
 
-1. 打开[在线网站](https://wenhaoquestion.github.io/ucsd-classrooms/)。
+1. 打开[在线网站](https://zhenzhenfufu.github.io/ucsd-classrooms/)。
 2. 选择日期和时间，再从地图或搜索中选择楼宇。
 3. 选择教室，查看课程安排。
-4. 打开 [YORK](https://wenhaoquestion.github.io/ucsd-classrooms/?building=YORK) 体验室内地图，也可以直接查看 [2622 教室](https://wenhaoquestion.github.io/ucsd-classrooms/?building=YORK&room=2622)。
+4. 打开 [YORK](https://zhenzhenfufu.github.io/ucsd-classrooms/?building=YORK) 体验室内地图，也可以直接查看 [2622 教室](https://zhenzhenfufu.github.io/ucsd-classrooms/?building=YORK&room=2622)。
 
 ## 本地运行
 
 需要 **Node.js 22** 和 npm。以下命令适用于 Windows、macOS 和 Linux。
 
 ```sh
-git clone https://github.com/wenhaoquestion/ucsd-classrooms.git
+git clone https://github.com/zhenzhenfufu/ucsd-classrooms.git
 cd ucsd-classrooms
 npm ci
 npm run dev
@@ -76,7 +76,7 @@ Geisel 实时空闲情况还需要一个小组件：LibCal 不允许其他网站
 
 在 **Settings → Pages → Build and deployment** 中，将发布来源设为 **GitHub Actions**。部署成功后可通过以下地址访问：
 
-**https://wenhaoquestion.github.io/ucsd-classrooms/**
+**https://zhenzhenfufu.github.io/ucsd-classrooms/**
 
 如果部署到其他 fork，请更新 `scripts/build.mjs` 中的站点地址、`static/index.html` 中的预览图片地址，以及两份 README、`package.json` 和 `src/components/App.tsx` 中的仓库链接。
 
@@ -113,7 +113,7 @@ Geisel 实时空闲情况还需要一个小组件：LibCal 不允许其他网站
 
 ## 致谢与许可
 
-本项目基于 Sean（SheepTester）创建的 [SheepTester/ucsd-classrooms](https://github.com/SheepTester/ucsd-classrooms) 扩展。更早的提交历史见 [SheepTester/uxdy/classrooms](https://github.com/SheepTester/uxdy/tree/main/classrooms)。本 fork 新增了楼宇浏览、校园外观、Facilities 布局、EBU3B 描摹数据、辅助工具、测试和部署更新。
+本项目基于 Sean（SheepTester）创建的 [SheepTester/ucsd-classrooms](https://github.com/SheepTester/ucsd-classrooms) 扩展。更早的提交历史见 [SheepTester/uxdy/classrooms](https://github.com/SheepTester/uxdy/tree/main/classrooms)。楼宇浏览、校园外观、Facilities 布局、EBU3B 描摹数据、Geisel 自习室、辅助工具、测试和部署更新来自 [@wenhaoquestion](https://github.com/wenhaoquestion) 的 [wenhaoquestion/ucsd-classrooms](https://github.com/wenhaoquestion/ucsd-classrooms)。本仓库由 [@zhenzhenfufu](https://github.com/zhenzhenfufu) 维护。
 
 校园地图使用 [SheepTester 的 UCSD 地图工具](https://sheeptester.github.io/words-go-here/misc/ucsd-map.html)制作。室内平面图来源见[几何数据文档](docs/indoor-geometry.md)。
 

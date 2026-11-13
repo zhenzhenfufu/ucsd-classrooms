@@ -513,16 +513,20 @@ export function App({ title }: AppProps) {
               <TermStatus statuses={state?.status} />
               <p className="credit">
                 Made by{" "}
-                <a href="https://github.com/wenhaoquestion" className="link">
-                  @wenhaoquestion
+                <a href="https://github.com/zhenzhenfufu" className="link">
+                  @zhenzhenfufu
                 </a>
                 , based on{" "}
+                <a href="https://github.com/wenhaoquestion/ucsd-classrooms" className="link">
+                  wenhaoquestion's
+                </a>{" "}
+                and{" "}
                 <a href="https://github.com/SheepTester/ucsd-classrooms" className="link">
                   SheepTester's
                 </a>
                 .{" "}
                 <a
-                  href="https://github.com/wenhaoquestion/ucsd-classrooms"
+                  href="https://github.com/zhenzhenfufu/ucsd-classrooms"
                   className="link"
                 >
                   GitHub

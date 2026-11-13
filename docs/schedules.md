@@ -1,10 +1,10 @@
 # Classroom schedules
 
-The site serves `schedules/classrooms-<TERM>.txt` for classroom views and the `-full.txt` version for course and instructor search. GitHub Pages includes both files from this repository's [schedule-data branch](https://github.com/wenhaoquestion/ucsd-classrooms/tree/schedule-data). The timestamp in the files records when the source data was captured.
+The site serves `schedules/classrooms-<TERM>.txt` for classroom views and the `-full.txt` version for course and instructor search. GitHub Pages includes both files from this repository's [schedule-data branch](https://github.com/zhenzhenfufu/ucsd-classrooms/tree/schedule-data). The timestamp in the files records when the source data was captured.
 
 ## Refresh a term
 
-1. Open [Actions → Refresh UCSD schedules](https://github.com/wenhaoquestion/ucsd-classrooms/actions/workflows/scrape-schedules.yml) and select **Run workflow** on `main`.
+1. Open [Actions → Refresh UCSD schedules](https://github.com/zhenzhenfufu/ucsd-classrooms/actions/workflows/scrape-schedules.yml) and select **Run workflow** on `main`.
 2. Enter a term code such as `FA26`, `SP26`, or `S126`.
 3. Choose **archive** to import both files already published by [SheepTester](https://sheeptester.github.io/uxdy/data/). Choose **legacy** to generate both files directly from the [public UCSD Schedule of Classes](https://act.ucsd.edu/scheduleOfClasses/scheduleOfClassesStudent.htm) for a term it still serves.
 

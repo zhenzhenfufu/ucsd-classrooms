@@ -4,13 +4,13 @@
 
 Explore UC San Diego classrooms, check scheduled availability, and browse campus buildings in 3D.
 
-**[Open the website](https://wenhaoquestion.github.io/ucsd-classrooms/)** · **[Explore YORK in 3D](https://wenhaoquestion.github.io/ucsd-classrooms/?building=YORK)** · **[Indoor geometry documentation](docs/indoor-geometry.md)**
+**[Open the website](https://zhenzhenfufu.github.io/ucsd-classrooms/)** · **[Explore YORK in 3D](https://zhenzhenfufu.github.io/ucsd-classrooms/?building=YORK)** · **[Indoor geometry documentation](docs/indoor-geometry.md)**
 
 ![York Hall in the 3D indoor explorer, with floors separated and classroom availability shown](static/open-graph.png)
 
 *York Hall (YORK): explore floors and view classroom schedules for a selected date and time.*
 
-**[Browse SVG floor plans](https://wenhaoquestion.github.io/ucsd-classrooms/indoor/plans/)** — 85 building layouts, with individual floor drawings.
+**[Browse SVG floor plans](https://zhenzhenfufu.github.io/ucsd-classrooms/indoor/plans/)** — 85 building layouts, with individual floor drawings.
 
 ## Features
 
@@ -37,17 +37,17 @@ scheduled classes from Geisel rooms with live booking availability. Times use
 San Diego's time zone and the current Monday–Sunday week; missing data is shown
 as unavailable, never as free. Open a result to view the room at that date and time.
 
-1. Open the [live website](https://wenhaoquestion.github.io/ucsd-classrooms/).
+1. Open the [live website](https://zhenzhenfufu.github.io/ucsd-classrooms/).
 2. Select a date and time, then choose a building on the map or use search.
 3. Select a room to inspect its schedule.
-4. For the indoor explorer, open [YORK](https://wenhaoquestion.github.io/ucsd-classrooms/?building=YORK). Try a mapped room such as [2622](https://wenhaoquestion.github.io/ucsd-classrooms/?building=YORK&room=2622).
+4. For the indoor explorer, open [YORK](https://zhenzhenfufu.github.io/ucsd-classrooms/?building=YORK). Try a mapped room such as [2622](https://zhenzhenfufu.github.io/ucsd-classrooms/?building=YORK&room=2622).
 
 ## Run locally
 
 Requires **Node.js 22** and npm. Commands work on Windows, macOS, and Linux.
 
 ```sh
-git clone https://github.com/wenhaoquestion/ucsd-classrooms.git
+git clone https://github.com/zhenzhenfufu/ucsd-classrooms.git
 cd ucsd-classrooms
 npm ci
 npm run dev
@@ -86,7 +86,7 @@ The [deployment workflow](.github/workflows/gh-pages.yml) runs on pushes to `mai
 
 In **Settings → Pages → Build and deployment**, use **GitHub Actions** as the source. Once deployment succeeds, the site is available at:
 
-**https://wenhaoquestion.github.io/ucsd-classrooms/**
+**https://zhenzhenfufu.github.io/ucsd-classrooms/**
 
 When deploying a different fork, update the site URL in `scripts/build.mjs`, the preview image URL in `static/index.html`, and the repository links in both READMEs, `package.json`, and `src/components/App.tsx`.
 
@@ -123,7 +123,7 @@ See [Indoor geometry and the 3D building explorer](docs/indoor-geometry.md) for 
 
 ## Credits and license
 
-This project extends [SheepTester/ucsd-classrooms](https://github.com/SheepTester/ucsd-classrooms), originally created by Sean (SheepTester). Earlier history is in [SheepTester/uxdy/classrooms](https://github.com/SheepTester/uxdy/tree/main/classrooms). This fork adds the building explorer, campus exteriors, Facilities layouts, traced EBU3B data, supporting tools, tests, and deployment updates.
+This project extends [SheepTester/ucsd-classrooms](https://github.com/SheepTester/ucsd-classrooms), originally created by Sean (SheepTester). Earlier history is in [SheepTester/uxdy/classrooms](https://github.com/SheepTester/uxdy/tree/main/classrooms). The building explorer, campus exteriors, Facilities layouts, traced EBU3B data, Geisel study rooms, supporting tools, tests, and deployment updates come from [wenhaoquestion/ucsd-classrooms](https://github.com/wenhaoquestion/ucsd-classrooms) by [@wenhaoquestion](https://github.com/wenhaoquestion). This copy is maintained by [@zhenzhenfufu](https://github.com/zhenzhenfufu).
 
 The campus map was prepared with [SheepTester's UCSD map tool](https://sheeptester.github.io/words-go-here/misc/ucsd-map.html). Indoor source plans are credited in the [geometry documentation](docs/indoor-geometry.md).
 
