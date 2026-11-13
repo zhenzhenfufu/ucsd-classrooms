@@ -24,6 +24,10 @@ Explore UC San Diego classrooms, check scheduled availability, and browse campus
 - **3D building explorer:** inspect campus building exteriors, nearby buildings, floor controls, and classroom counts. Buildings with room geometry support room selection and schedule activity colors.
 - **Indoor layouts:** published Facilities data covers 77 building codes and 9,697 room records. Where plans provide only a floor listing, classrooms stay in the floor's room list instead of receiving an invented position.
 - **Geisel Library study rooms:** Geisel's 39 bookable rooms on a 3D model of all eight floors, colored by live LibCal reservations at the selected date and time (free, booked, not bookable). Select a room for its day timeline, or use **Book** to open its LibCal page on that date, where you sign in to reserve. Floors 1-2 draw rooms in labeled blocks, as the library's maps do.
+- **Saved rooms:** star a classroom with **Save room** on its schedule. Saved rooms appear at the top of **Free rooms** with whether each one is free, in class, or about to start. The list stays in your browser.
+- **Seat filter:** limit free rooms to 30+, 60+, 100+ or 200+ seats. Sizes are estimated from the largest class scheduled in each room.
+- **Add to calendar:** in **Plan this week**, the calendar button next to a classroom or Geisel room saves that slot as an `.ics` event for Google, Apple or Outlook Calendar.
+- **中文 / English:** switch the interface language with the chip at the end of the toolbar. Chinese browsers start in Chinese; building names, course titles and instructors stay as UCSD lists them.
 - **Room-list fallback:** schedules remain accessible when 3D is disabled or WebGL is unavailable. Switch with **List / 3D** in the building panel; phones start with the list, and the browser remembers your choice.
 
 ## Try it

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { buildings } from "../../lib/buildings";
 import { RoomMeeting, TermBuildings } from "../../lib/coursesToClassrooms";
 import { startLocating, useUserLocation } from "../../lib/geolocation";
+import { useT } from "../../lib/i18n";
 import { hasIndoorLayout } from "../../lib/indoor/manifest";
 import {
   GEISEL,
@@ -67,6 +68,7 @@ export function CampusMap({
   const [zoom, setZoom] = useState(1);
   const [minZoom, setMinZoom] = useState(MIN_ZOOM);
   const userLocation = useUserLocation();
+  const t = useT();
   const [followPending, setFollowPending] = useState(false);
   const moment = useMoment();
   const libraryLive = useGeiselAvailability(moment.date, now().date, moment.type !== "term");
@@ -342,7 +344,7 @@ export function CampusMap({
               left: `calc(${userPoint.x}px * var(--map-zoom))`,
               top: `calc(${userPoint.y}px * var(--map-zoom))`,
             }}
-            aria-label="Your location"
+            aria-label={t("Your location")}
             role="img"
           >
             <span
@@ -370,12 +372,12 @@ export function CampusMap({
           />
         ))}
       </div>
-      <div className="map-controls" role="toolbar" aria-label="Map">
+      <div className="map-controls" role="toolbar" aria-label={t("Map")}>
         {(userLocation.type === "error" || offCampus) && (
           <p className="map-control-note" role="status">
             {userLocation.type === "error"
-              ? userLocation.message
-              : "You seem to be off campus."}
+              ? t(userLocation.message)
+              : t("You seem to be off campus.")}
           </p>
         )}
         <div className="map-control-group map-zoom-controls">
@@ -383,8 +385,8 @@ export function CampusMap({
             className="map-control"
             onClick={() => animateZoom(BUTTON_ZOOM_STEP)}
             disabled={zoom >= MAX_ZOOM - 0.001}
-            aria-label="Zoom in"
-            title="Zoom in"
+            aria-label={t("Zoom in")}
+            title={t("Zoom in")}
           >
             <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
               <path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" />
@@ -394,8 +396,8 @@ export function CampusMap({
             className="map-control"
             onClick={() => animateZoom(1 / BUTTON_ZOOM_STEP)}
             disabled={zoom <= minZoom + 0.001}
-            aria-label="Zoom out"
-            title="Zoom out"
+            aria-label={t("Zoom out")}
+            title={t("Zoom out")}
           >
             <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
               <path d="M5 11h14v2H5z" />
@@ -412,13 +414,13 @@ export function CampusMap({
               setFollowPending(true);
             }
           }}
-          aria-label="Show my location"
+          aria-label={t("Show my location")}
           title={
             userLocation.type === "error"
-              ? userLocation.message
+              ? t(userLocation.message)
               : offCampus
-              ? "You seem to be off campus"
-              : "Show my location"
+              ? t("You seem to be off campus")
+              : t("Show my location")
           }
         >
           <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">

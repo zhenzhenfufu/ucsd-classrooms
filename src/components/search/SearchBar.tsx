@@ -1,4 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useT } from "../../lib/i18n";
 import { isMeetingOngoing, useMoment } from "../../lib/moment-context";
 import { Meeting, Section } from "../../lib/section-types";
 import { Term } from "../../lib/TermCache";
@@ -70,6 +71,7 @@ export function SearchBar({
   visible,
 }: SearchBarProps) {
   const moment = useMoment();
+  const t = useT();
   const [query, setQuery] = useState("");
   // Typing stays responsive while results for large terms catch up
   const deferredQuery = useDeferredValue(query);
@@ -178,10 +180,10 @@ export function SearchBar({
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          aria-label="Search courses, professors, buildings, and rooms."
+          aria-label={t("Search courses, professors, buildings, and rooms.")}
           aria-expanded={showingResults || showRecent}
-          title="Press '/' to jump to the search box."
-          placeholder="Course, professor, building, or room"
+          title={t("Press '/' to jump to the search box.")}
+          placeholder={t("Course, professor, building, or room")}
           className="search-input"
           value={query}
           onChange={(e) => {
@@ -219,7 +221,7 @@ export function SearchBar({
           <button
             className="icon-btn clear-btn"
             type="reset"
-            aria-label="Clear search"
+            aria-label={t("Clear search")}
             onClick={() => {
               setQuery("");
               onSearch(false);
@@ -235,11 +237,11 @@ export function SearchBar({
         <div
           className="results"
           role="listbox"
-          aria-label="Recent searches"
+          aria-label={t("Recent searches")}
           onMouseDown={(e) => e.preventDefault()}
         >
           <div className="result-heading result-heading-row">
-            <h2 className="result-heading-text">Recent</h2>
+            <h2 className="result-heading-text">{t("Recent")}</h2>
             <button
               type="button"
               className="result-heading-action"
@@ -248,7 +250,7 @@ export function SearchBar({
                 saveRecent([]);
               }}
             >
-              Clear
+              {t("Clear")}
             </button>
           </div>
           {recent.map((item, i) => (
@@ -285,7 +287,7 @@ export function SearchBar({
             setOngoingOnly(e.currentTarget.checked);
           }}
         />
-        Only courses with a lecture now
+        {t("Only courses with a lecture now")}
       </label>
     </form>
   );

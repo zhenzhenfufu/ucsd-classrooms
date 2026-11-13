@@ -6,7 +6,8 @@ import { getHolidays } from "../lib/holidays";
 import { fromViewTerm, MomentContext } from "../lib/moment-context";
 import { Course } from "../lib/section-types";
 import { Term, TermCache, TermError } from "../lib/TermCache";
-import { CurrentTerm, getTerm, Season, termCode, termName } from "../lib/terms";
+import { CurrentTerm, getTerm, Season, termCode } from "../lib/terms";
+import { localTermName, Translate, useLang, useT } from "../lib/i18n";
 import { useLast } from "../lib/useLast";
 import {
   viewTermsEqual,
@@ -55,18 +56,20 @@ type AppState = {
  * term failed to load.
  * @param errors - Guaranteed to be nonempty.
  */
-function displayError(errors: TermError[]): string {
+function displayError(errors: TermError[], t: Translate): string {
   const offlineErrors = errors
     .filter(({ type }) => type === "offline")
-    .map(({ request: { year, quarter } }) => termName(year, quarter));
+    .map(({ request: { year, quarter } }) => localTermName(t, year, quarter));
   if (offlineErrors.length > 0) {
-    return `I couldn't load schedules for ${offlineErrors.join(
-      " and "
-    )}. Is ResNet failing you again?`;
+    return t("I couldn't load schedules for {terms}. Is ResNet failing you again?", {
+      terms: offlineErrors.join(t(" and ")),
+    });
   } else {
-    return `Schedules aren't available for ${errors
-      .map(({ request: { year, quarter } }) => termName(year, quarter))
-      .join(" and ")}.`;
+    return t("Schedules aren't available for {terms}.", {
+      terms: errors
+        .map(({ request: { year, quarter } }) => localTermName(t, year, quarter))
+        .join(t(" and ")),
+    });
   }
 }
 
@@ -90,6 +93,8 @@ export type AppProps = {
   title: string;
 };
 export function App({ title }: AppProps) {
+  const lang = useLang();
+  const t = useT();
   const [realTime, setRealTime] = useState(true);
   const [moment, setMoment] = useState(() => fromViewTerm(null));
   useEffect(() => {
@@ -120,18 +125,18 @@ export function App({ title }: AppProps) {
   const notice = useLast(
     "",
     state === null
-      ? "Loading..."
+      ? t("Loading...")
       : state.buildings
       ? null
       : state && state.errors.length > 0
-      ? displayError(state.errors)
+      ? displayError(state.errors, t)
       : state.holiday
-      ? `${state.holiday}!`
+      ? t("{holiday}!", { holiday: t(state.holiday) })
       : state.season === "WI"
-      ? "Winter break."
+      ? t("Winter break.")
       : state.season === "SP"
-      ? "Spring break."
-      : "Summer break."
+      ? t("Spring break.")
+      : t("Summer break.")
   );
 
   const [showDatePanel, setShowDatePanel] = useState(false);
@@ -310,7 +315,7 @@ export function App({ title }: AppProps) {
           type: "course",
           course: { code: view.course, title: view.course, groups: [] },
         });
-        document.title = `Course not found · ${title}`;
+        document.title = `${t("Course not found")} · ${title}`;
       }
     } else {
       const [last, first] = view.name.split(", ");
@@ -511,27 +516,51 @@ export function App({ title }: AppProps) {
           footer={
             <>
               <TermStatus statuses={state?.status} />
-              <p className="credit">
-                Made by{" "}
-                <a href="https://github.com/zhenzhenfufu" className="link">
-                  @zhenzhenfufu
-                </a>
-                , based on{" "}
-                <a href="https://github.com/wenhaoquestion/ucsd-classrooms" className="link">
-                  wenhaoquestion's
-                </a>{" "}
-                and{" "}
-                <a href="https://github.com/SheepTester/ucsd-classrooms" className="link">
-                  SheepTester's
-                </a>
-                .{" "}
-                <a
-                  href="https://github.com/zhenzhenfufu/ucsd-classrooms"
-                  className="link"
-                >
-                  GitHub
-                </a>
-              </p>
+              {lang === "zh" ? (
+                <p className="credit">
+                  由{" "}
+                  <a href="https://github.com/zhenzhenfufu" className="link">
+                    @zhenzhenfufu
+                  </a>{" "}
+                  制作，基于{" "}
+                  <a href="https://github.com/wenhaoquestion/ucsd-classrooms" className="link">
+                    wenhaoquestion
+                  </a>{" "}
+                  和{" "}
+                  <a href="https://github.com/SheepTester/ucsd-classrooms" className="link">
+                    SheepTester
+                  </a>{" "}
+                  的版本。{" "}
+                  <a
+                    href="https://github.com/zhenzhenfufu/ucsd-classrooms"
+                    className="link"
+                  >
+                    GitHub
+                  </a>
+                </p>
+              ) : (
+                <p className="credit">
+                  Made by{" "}
+                  <a href="https://github.com/zhenzhenfufu" className="link">
+                    @zhenzhenfufu
+                  </a>
+                  , based on{" "}
+                  <a href="https://github.com/wenhaoquestion/ucsd-classrooms" className="link">
+                    wenhaoquestion's
+                  </a>{" "}
+                  and{" "}
+                  <a href="https://github.com/SheepTester/ucsd-classrooms" className="link">
+                    SheepTester's
+                  </a>
+                  .{" "}
+                  <a
+                    href="https://github.com/zhenzhenfufu/ucsd-classrooms"
+                    className="link"
+                  >
+                    GitHub
+                  </a>
+                </p>
+              )}
             </>
           }
         />

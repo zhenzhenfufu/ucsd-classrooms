@@ -1,4 +1,5 @@
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
+import { useT } from "../../lib/i18n";
 import { Time } from "../../lib/Time";
 
 /** Must match `--wheel-item` in styles.css. */
@@ -159,12 +160,13 @@ export type TimeWheelProps = {
 
 /** A 12-hour time picker made of three vertical scroll wheels. */
 export function TimeWheel({ time, onTime, live }: TimeWheelProps) {
+  const t = useT();
   const hour = time.hour % 12;
   const period = time.hour < 12 ? 0 : 1;
   return (
-    <div className={`time-wheel ${live ? "time-wheel-live" : ""}`} role="group" aria-label="Time">
+    <div className={`time-wheel ${live ? "time-wheel-live" : ""}`} role="group" aria-label={t("Time")}>
       <WheelColumn
-        label="Hour"
+        label={t("Hour")}
         options={HOURS}
         index={hour}
         onChange={(hour) => onTime(new Time(hour + period * 12, time.minute))}
@@ -173,13 +175,13 @@ export function TimeWheel({ time, onTime, live }: TimeWheelProps) {
         :
       </span>
       <WheelColumn
-        label="Minute"
+        label={t("Minute")}
         options={MINUTES}
         index={time.minute}
         onChange={(minute) => onTime(new Time(time.hour, minute))}
       />
       <WheelColumn
-        label="AM or PM"
+        label={t("AM or PM")}
         options={PERIODS}
         index={period}
         onChange={(period) => onTime(new Time(hour + period * 12, time.minute))}

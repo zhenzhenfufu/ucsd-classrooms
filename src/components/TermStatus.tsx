@@ -1,4 +1,5 @@
 import { Term } from "../lib/TermCache";
+import { useLocale, useT } from "../lib/i18n";
 import { termCode } from "../lib/terms";
 import { useLast } from "../lib/useLast";
 
@@ -8,6 +9,8 @@ export type TermStatusProps = {
   statuses?: TermStatus[];
 };
 export function TermStatus({ statuses }: TermStatusProps) {
+  const t = useT();
+  const locale = useLocale();
   if (!statuses || statuses.length === 0) {
     return null;
   }
@@ -35,16 +38,16 @@ export function TermStatus({ statuses }: TermStatusProps) {
           )}
           {status instanceof Date ? (
             <>
-              {omitTerm ? "Data updated " : "last updated "}
+              {omitTerm ? t("Data updated") : t("last updated")}{" "}
               <span className="updated-date">
-                {status.toLocaleDateString()}
+                {status.toLocaleDateString(locale)}
               </span>
-              .
+              {t(".")}
             </>
           ) : status === "offline" ? (
-            "failed to load."
+            t("failed to load.")
           ) : (
-            "is unavailable."
+            t("is unavailable.")
           )}
         </p>
       ))}

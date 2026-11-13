@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { BuildingDatum } from "../../lib/buildings";
+import { Translate, useLocale, useT } from "../../lib/i18n";
 import { IndoorIndex, roomForKey } from "../../lib/indoor/roomMapping";
 import { RoomStatusKind } from "../../lib/indoor/roomStatus";
 import {
@@ -54,15 +55,16 @@ function ExternalIcon() {
 
 function BookLink({ space, primary = false }: { space: LibrarySpace; primary?: boolean }) {
   const moment = useMoment();
+  const t = useT();
   return (
     <a
       className={`library-book ${primary ? "action-btn action-btn-primary" : ""}`}
       href={bookingUrl(space, moment.type === "term" ? undefined : moment.date)}
       target="_blank"
       rel="noreferrer"
-      title={`Reserve ${space.title} on the library's LibCal (UCSD sign-in)`}
+      title={t("Reserve {name} on the library's LibCal (UCSD sign-in)", { name: space.title })}
     >
-      {primary ? `Reserve ${space.title}` : "Book"}
+      {primary ? t("Reserve {name}", { name: space.title }) : t("Book")}
       <ExternalIcon />
     </a>
   );
@@ -74,6 +76,7 @@ function BookLink({ space, primary = false }: { space: LibrarySpace; primary?: b
  */
 export function useGeiselBooking(index: IndoorIndex | null, enabled: boolean): GeiselBooking {
   const moment = useMoment();
+  const t = useT();
   const today = now().date;
   const datePicked = moment.type !== "term";
   const live = useGeiselAvailability(moment.date, today, enabled && datePicked);
@@ -99,7 +102,9 @@ export function useGeiselBooking(index: IndoorIndex | null, enabled: boolean): G
     const floorBadges = new Map([
       [
         "L2",
-        `+${booths.length} booths${statuses ? ` (${freeBooths.length} free)` : ""}`,
+        statuses
+          ? t("+{count} booths ({free} free)", { count: booths.length, free: freeBooths.length })
+          : t("+{count} booths", { count: booths.length }),
       ],
     ]);
     const label = (roomId: string) => index?.roomsById.get(roomId)?.label ?? roomId;
@@ -122,8 +127,8 @@ export function useGeiselBooking(index: IndoorIndex | null, enabled: boolean): G
           const status = statuses?.get(space.key);
           return (
             <>
-              <strong>{space.title}</strong> · {floor} · {space.capacity} seats
-              {status ? ` · ${describeStatus(status)}` : ""}{" "}
+              <strong>{space.title}</strong> · {floor} · {t("{count} seats", { count: space.capacity })}
+              {status ? ` · ${describeStatus(status, t)}` : ""}{" "}
               <BookLink space={space} />
             </>
           );
@@ -134,8 +139,11 @@ export function useGeiselBooking(index: IndoorIndex | null, enabled: boolean): G
             <strong>
               {index?.roomsById.get(roomId)?.name} {label(roomId)}
             </strong>{" "}
-            · {floor} · {statuses ? `${free.length} of ${spaces.length} free` : `${spaces.length} rooms`}
-            . Pick one in the list to book it.
+            · {floor} ·{" "}
+            {statuses
+              ? t("{free} of {total} free", { free: free.length, total: spaces.length })
+              : t("{count} rooms", { count: spaces.length })}
+            {t(". Pick one in the list to book it.")}
           </>
         );
       },
@@ -143,31 +151,33 @@ export function useGeiselBooking(index: IndoorIndex | null, enabled: boolean): G
       // Without live data, rooms aren't colored, so there's nothing to explain
       legend: statuses ? ["bookable", "booked", "closed"] : [],
       legendNote: statuses
-        ? "Live reservations from the library's LibCal"
-        : "Live reservations unavailable; rooms still link to LibCal",
-      hint: "Tap a study room to see when it's free and book it.",
+        ? t("Live reservations from the library's LibCal")
+        : t("Live reservations unavailable; rooms still link to LibCal"),
+      hint: t("Tap a study room to see when it's free and book it."),
     };
-  }, [index, statuses, state.type]);
+  }, [index, statuses, state.type, t]);
 
   return { state, statuses, explorer };
 }
 
-function stateMessage(state: GeiselBooking["state"], date: string): string | null {
+function stateMessage(state: GeiselBooking["state"], date: string, t: Translate): string | null {
   switch (state.type) {
     case "ready":
       return state.data.windowEnd && state.data.spaces.size === 0
-        ? `Reservations for ${date} haven't opened yet. LibCal books about two weeks ahead.`
+        ? t("Reservations for {date} haven't opened yet. LibCal books about two weeks ahead.", { date })
         : null;
     case "loading":
-      return "Loading live reservations…";
+      return t("Loading live reservations…");
     case "error":
-      return `Couldn't load live reservations (${state.message}). Each room still links to LibCal.`;
+      return t("Couldn't load live reservations ({message}). Each room still links to LibCal.", {
+        message: t(state.message),
+      });
     case "past":
-      return "Reservations aren't shown for past dates.";
+      return t("Reservations aren't shown for past dates.");
     case "no-date":
-      return "Pick a date and time to see which study rooms are free.";
+      return t("Pick a date and time to see which study rooms are free.");
     case "unconfigured":
-      return "Live availability isn't set up for this copy of the site. Each room links to its LibCal page.";
+      return t("Live availability isn't set up for this copy of the site. Each room links to its LibCal page.");
   }
 }
 
@@ -182,6 +192,7 @@ function SpaceCard({
   highlighted: boolean;
   onHoverRoom_s: (room: string | null) => void;
 }) {
+  const t = useT();
   return (
     <div
       className={`room library-room ${status ? `library-${status.kind}` : ""} ${
@@ -198,14 +209,14 @@ function SpaceCard({
       >
         <div className="room-name">
           {space.title}
-          <span className="library-capacity" title={`${space.capacity} seats`}>
+          <span className="library-capacity" title={t("{count} seats", { count: space.capacity })}>
             {space.capacity}
             <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
               <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-3.3 0-8 1.7-8 5v1h16v-1c0-3.3-4.7-5-8-5z" />
             </svg>
           </span>
         </div>
-        <div className="current-meeting">{status ? describeStatus(status) : space.note ?? " "}</div>
+        <div className="current-meeting">{status ? describeStatus(status, t) : space.note ?? " "}</div>
       </Link>
       <BookLink space={space} />
     </div>
@@ -214,20 +225,22 @@ function SpaceCard({
 
 function DayTimeline({ space, booking }: { space: LibrarySpace; booking: GeiselBooking }) {
   const moment = useMoment();
+  const t = useT();
+  const locale = useLocale();
   if (booking.state.type !== "ready") {
     return null;
   }
   const slots = booking.state.data.spaces.get(space.eid) ?? [];
   const runs = slotRuns(slots);
   if (runs.length === 0) {
-    return <p className="library-timeline-empty">No bookable times on this day.</p>;
+    return <p className="library-timeline-empty">{t("No bookable times on this day.")}</p>;
   }
   const url = bookingUrl(space, moment.date);
   return (
-    <ol className="library-timeline" aria-label={`${space.title} on ${moment.date.toString([], { weekday: "long", month: "long", day: "numeric" })}`}>
+    <ol className="library-timeline" aria-label={t("{name} on {date}", { name: space.title, date: moment.date.toString(locale, { weekday: "long", month: "long", day: "numeric" }) })}>
       {runs.map((run) => {
         const current = run.start <= moment.time && moment.time < run.end;
-        const text = run.status === "free" ? "Free" : run.status === "booked" ? "Booked" : "Not bookable";
+        const text = run.status === "free" ? t("Free") : run.status === "booked" ? t("Booked") : t("Not bookable");
         return (
           <li
             key={+run.start}
@@ -239,7 +252,7 @@ function DayTimeline({ space, booking }: { space: LibrarySpace; booking: GeiselB
             <span className="library-run-status">{text}</span>
             {run.status === "free" && (
               <a href={url} target="_blank" rel="noreferrer" className="library-run-book">
-                Book
+                {t("Book")}
                 <ExternalIcon />
               </a>
             )}
@@ -273,12 +286,14 @@ export function LibraryPanelContent({
   onExplorerEnabled_s,
 }: LibraryPanelContentProps) {
   const moment = useMoment();
+  const t = useT();
+  const locale = useLocale();
   const [freeOnly, setFreeOnly] = useState(false);
   const { statuses } = booking;
   const freeCount = statuses
     ? [...statuses.values()].filter((status) => status.kind === "free").length
     : null;
-  const message = stateMessage(booking.state, moment.date.toString([], { month: "long", day: "numeric" }));
+  const message = stateMessage(booking.state, moment.date.toString(locale, { month: "long", day: "numeric" }), t);
   const notice = message && (
     <div className="room-notice library-notice" role="status">
       <p>{message}</p>
@@ -309,7 +324,7 @@ export function LibraryPanelContent({
     const space = SPACES_BY_KEY.get(room);
     const geometry = index && !space ? roomForKey(index, room) : null;
     const block = geometry ? SPACES_BY_ROOM.get(geometry.id) : undefined;
-    const floor = (id: string) => index?.floorsById.get(id)?.label ?? `Floor ${id.slice(1)}`;
+    const floor = (id: string) => index?.floorsById.get(id)?.label ?? t("Floor {n}", { n: id.slice(1) });
     return (
       <>
         <BuildingHeader building={building} room={room} />
@@ -319,15 +334,18 @@ export function LibraryPanelContent({
             <>
               <div className="room-notice">
                 <p>
-                  {floor(space.floor)} · {space.capacity} seat{space.capacity === 1 ? "" : "s"}
+                  {floor(space.floor)} ·{" "}
+                  {t(space.capacity === 1 ? "{count} seat" : "{count} seats", { count: space.capacity })}
                   {space.note ? ` · ${space.note}` : ""}
                   {space.room && SPACES_BY_ROOM.get(space.room)!.length > 1
-                    ? `. The library map shows it in the ${index?.roomsById.get(space.room)?.label ?? ""} block, not as its own room.`
+                    ? t(". The library map shows it in the {block} block, not as its own room.", {
+                        block: index?.roomsById.get(space.room)?.label ?? "",
+                      })
                     : ""}
                 </p>
                 {statuses?.get(space.key) && (
                   <p className={`library-status library-${statuses.get(space.key)!.kind}`}>
-                    {describeStatus(statuses.get(space.key)!)}
+                    {describeStatus(statuses.get(space.key)!, t)}
                   </p>
                 )}
               </div>
@@ -336,27 +354,31 @@ export function LibraryPanelContent({
               </div>
               <DayTimeline space={space} booking={booking} />
               <p className="library-fineprint">
-                Booking opens LibCal, where you sign in with your UCSD account.
+                {t("Booking opens LibCal, where you sign in with your UCSD account.")}
                 {booking.state.type === "ready" &&
-                  ` Updated ${booking.state.data.fetchedAt.toLocaleTimeString([], {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}; refreshes every minute.`}
+                  ` ${t("Updated {time}; refreshes every minute.", {
+                    time: booking.state.data.fetchedAt.toLocaleTimeString(locale, {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    }),
+                  })}`}
               </p>
             </>
           ) : block ? (
             <>
               <div className="room-notice">
                 <p>
-                  {geometry?.name} {geometry?.label} on {floor(geometry!.floor)}. The library map
-                  draws these rooms as one block.
+                  {t("{room} on {floor}. The library map draws these rooms as one block.", {
+                    room: `${geometry?.name ?? ""} ${geometry?.label ?? ""}`,
+                    floor: floor(geometry!.floor),
+                  })}
                 </p>
               </div>
               {cards(block)}
             </>
           ) : (
             <div className="empty">
-              <p>{index ? `${room} isn't a bookable room in Geisel.` : "Loading…"}</p>
+              <p>{index ? t("{room} isn't a bookable room in Geisel.", { room }) : t("Loading…")}</p>
             </div>
           )}
         </div>
@@ -378,19 +400,19 @@ export function LibraryPanelContent({
         onFreeOnly={setFreeOnly}
         explorerOpen={explorerOpen}
         onExplorerEnabled_s={onExplorerEnabled_s}
-        freeTitle="Only show study rooms free to book now"
+        freeTitle={t("Only show study rooms free to book now")}
       />
       <div className="gradient gradient-sticky gradient-top" />
       {notice}
       {floors.length === 0 ? (
         <div className="empty">
-          <p>No study room is free to book at this time.</p>
+          <p>{t("No study room is free to book at this time.")}</p>
         </div>
       ) : (
         <div className="room-list">
           {floors.map((floor) => (
             <section className="room-section" key={floor}>
-              <h3 className="room-section-title">{FLOOR_LABELS[floor] ?? floor}</h3>
+              <h3 className="room-section-title">{FLOOR_LABELS[floor] ? t(FLOOR_LABELS[floor]) : floor}</h3>
               {cards(shown.filter((space) => space.floor === floor))}
             </section>
           ))}

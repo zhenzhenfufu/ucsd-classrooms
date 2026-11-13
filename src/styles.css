@@ -2412,3 +2412,134 @@ mark.result-match {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Saved rooms */
+.room-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.favorite-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px 4px 6px;
+  border-radius: 14px;
+  border: 1px solid var(--card-line);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 0.2s, transform 0.2s var(--spring);
+}
+.favorite-button .icon {
+  width: 18px;
+  height: 18px;
+}
+.favorite-button:hover {
+  background-color: var(--icon-button-hover);
+}
+.favorite-button:active {
+  transform: scale(0.96);
+}
+.favorite-button-on .icon,
+.saved-room-remove .icon {
+  fill: var(--soon);
+}
+.saved-rooms {
+  flex: none;
+  max-height: 34%;
+  overflow: auto;
+  padding: 8px 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.saved-rooms-title {
+  margin: 2px 4px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--secondary);
+}
+.saved-rooms-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.saved-rooms-list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.saved-room {
+  flex: auto;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--card-line);
+}
+.saved-room:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+.saved-room-status {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--secondary);
+}
+.saved-room-free {
+  color: var(--active);
+}
+.saved-room-soon {
+  color: var(--soon);
+}
+.saved-room-busy {
+  color: var(--red);
+}
+.saved-room-remove {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+.saved-room-remove .icon {
+  width: 20px;
+  height: 20px;
+}
+.saved-room-remove:hover {
+  background-color: var(--icon-button-hover);
+}
+.free-rooms-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 15px 0;
+}
+.free-rooms-controls .free-rooms-locate {
+  margin: 0;
+}
+.free-rooms-seats {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--secondary);
+}
+.free-rooms-seats select {
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--card-line);
+  background-color: var(--field);
+  color: var(--text);
+  font: inherit;
+}

@@ -1,5 +1,6 @@
 import { compareRoomNums } from "../../lib/compareRoomNums";
 import { RoomMeeting } from "../../lib/coursesToClassrooms";
+import { useT } from "../../lib/i18n";
 import { ROOM_STATUS_TEXT, RoomStatusKind } from "../../lib/indoor/roomStatus";
 import { meetingTypes } from "../../lib/meeting-types";
 import { useMoment } from "../../lib/moment-context";
@@ -8,8 +9,15 @@ import { Link } from "../Link";
 
 function FreeUntil({ meetings }: { meetings: RoomMeeting[] }) {
   const moment = useMoment();
+  const t = useT();
   const next = nextMeetingToday(meetings, moment);
-  return <>{next ? `Free until ${next.time.start}` : "Free rest of day"}</>;
+  return (
+    <>
+      {next
+        ? t("Free until {time}", { time: next.time.start.toString() })
+        : t("Free rest of day")}
+    </>
+  );
 }
 
 /** A group of rooms, e.g. one floor when indoor geometry exists. */
@@ -41,6 +49,7 @@ export function RoomList({
   freeOnly = false,
 }: RoomListProps) {
   const moment = useMoment();
+  const t = useT();
   const isShown = (room: string) =>
     !freeOnly ||
     (!!rooms[room] && getRoomActivity(rooms[room], moment).type === "inactive");
@@ -49,7 +58,7 @@ export function RoomList({
     return (
       <div className="empty">
         <p>
-          No classes are listed for this building this week.
+          {t("No classes are listed for this building this week.")}
         </p>
       </div>
     );
@@ -78,7 +87,7 @@ export function RoomList({
             {building} {room}
           </div>
           <div className="current-meeting">
-            {ROOM_STATUS_TEXT[emptyStatus ?? "none-listed"]}
+            {t(ROOM_STATUS_TEXT[emptyStatus ?? "none-listed"])}
           </div>
         </Link>
       );
@@ -104,16 +113,20 @@ export function RoomList({
               <>
                 {activeMeeting.course}{" "}
                 {soon ? (
-                  "soon"
+                  t("soon")
                 ) : (
                   <>
                     (
                     <abbr
-                      title={`${
-                        meetingTypes[activeMeeting.type]
-                      } with up to ${activeMeeting.capacity} student${
-                        activeMeeting.capacity === 1 ? "" : "s"
-                      }`}
+                      title={t(
+                        activeMeeting.capacity === 1
+                          ? "{type} with up to {count} student"
+                          : "{type} with up to {count} students",
+                        {
+                          type: t(`${meetingTypes[activeMeeting.type]}`),
+                          count: activeMeeting.capacity,
+                        }
+                      )}
                     >
                       {activeMeeting.type}
                     </abbr>
@@ -132,7 +145,7 @@ export function RoomList({
 
   const noneFree = (
     <div className="empty">
-      <p>Every classroom here has a class now or soon.</p>
+      <p>{t("Every classroom here has a class now or soon.")}</p>
     </div>
   );
 

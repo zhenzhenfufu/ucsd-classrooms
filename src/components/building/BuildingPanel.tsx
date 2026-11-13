@@ -2,6 +2,7 @@ import { PointerEvent, useContext, useMemo, useRef, useState } from "react";
 import { BuildingDatum } from "../../lib/buildings";
 import { getRoomActivity } from "../../lib/roomActivity";
 import { RoomMeeting } from "../../lib/coursesToClassrooms";
+import { Translate, useT } from "../../lib/i18n";
 import { hasIndoorLayout } from "../../lib/indoor/manifest";
 import { computeCoverage, IndoorIndex, roomForKey } from "../../lib/indoor/roomMapping";
 import { ScheduleAvailability } from "../../lib/indoor/roomStatus";
@@ -30,7 +31,8 @@ const UNPLACED_BASIS = {
 function indoorSections(
   index: IndoorIndex,
   rooms: Record<string, RoomMeeting[]>,
-  availability: ScheduleAvailability
+  availability: ScheduleAvailability,
+  t: Translate
 ): RoomListSection[] {
   const coverage = computeCoverage(index, Object.keys(rooms));
   const byFloor = new Map<string, string[]>();
@@ -60,7 +62,9 @@ function indoorSections(
         // A shell has no room positions at all, which the 3D view already says
         note:
           unplaced > 0 && !shell
-            ? `${unplaced === listed.length ? "These rooms aren't" : `${unplaced} of these rooms aren't`} placed on the floor plan.`
+            ? unplaced === listed.length
+              ? t("These rooms aren't placed on the floor plan.")
+              : t("{count} of these rooms aren't placed on the floor plan.", { count: unplaced })
             : undefined,
         rooms: [...listed, ...empty],
         emptyStatus: availability === "complete" ? "none-listed" : "unknown",
@@ -70,10 +74,10 @@ function indoorSections(
   if (coverage.scheduleOnly.length > 0) {
     sections.push({
       id: "unmapped",
-      title: shell ? "Floor unknown" : "Location not mapped yet",
+      title: shell ? t("Floor unknown") : t("Location not mapped yet"),
       note: shell
-        ? "These room numbers don't say which floor they're on."
-        : "These rooms are in the schedule, but no floor plan we have places them, so they aren't in the 3D view.",
+        ? t("These room numbers don't say which floor they're on.")
+        : t("These rooms are in the schedule, but no floor plan we have places them, so they aren't in the 3D view."),
       rooms: coverage.scheduleOnly,
     });
   }
@@ -104,6 +108,7 @@ function BuildingPanelContent({
 }: BuildingPanelContentProps) {
   const { code, images } = building;
   const moment = useMoment();
+  const t = useT();
   const [freeOnly, setFreeOnly] = useState(false);
   const freeCount = useMemo(
     () =>
@@ -117,8 +122,8 @@ function BuildingPanelContent({
 
   const index = layout.type === "ready" ? layout.index : null;
   const sections = useMemo(
-    () => (index ? indoorSections(index, rooms, availability) : undefined),
-    [index, rooms, availability]
+    () => (index ? indoorSections(index, rooms, availability, t) : undefined),
+    [index, rooms, availability, t]
   );
 
   let roomNotice = null;
@@ -127,9 +132,12 @@ function BuildingPanelContent({
   if (unplaced) {
     roomNotice = (
       <p>
-        {unplaced.room.basis === "room-number" ? "Probably on" : "On"} {unplaced.floor.label} (
-        {UNPLACED_BASIS[unplaced.room.basis]}). Its position on the floor isn't mapped. Its
-        schedule is below.
+        {t(
+          unplaced.room.basis === "room-number"
+            ? "Probably on {floor} ({basis}). Its position on the floor isn't mapped. Its schedule is below."
+            : "On {floor} ({basis}). Its position on the floor isn't mapped. Its schedule is below.",
+          { floor: unplaced.floor.label, basis: t(UNPLACED_BASIS[unplaced.room.basis]) }
+        )}
       </p>
     );
   } else if (room && index) {
@@ -137,22 +145,29 @@ function BuildingPanelContent({
     if (!geometryRoom) {
       roomNotice = (
         <p>
-          This room's location inside {code} hasn't been mapped yet. Its schedule
-          is below.
+          {t("This room's location inside {code} hasn't been mapped yet. Its schedule is below.", {
+            code,
+          })}
         </p>
       );
     } else if (!rooms[room]) {
       emptyMessage =
         availability === "complete"
-          ? `No classes are listed for ${code} ${room} in the loaded schedules. That doesn't necessarily mean the room is open or available.`
-          : `Some schedule data failed to load, so it's unknown whether classes meet in ${code} ${room}.`;
+          ? t(
+              "No classes are listed for {room} in the loaded schedules. That doesn't necessarily mean the room is open or available.",
+              { room: `${code} ${room}` }
+            )
+          : t(
+              "Some schedule data failed to load, so it's unknown whether classes meet in {room}.",
+              { room: `${code} ${room}` }
+            );
     }
   }
   if (room && availability === "partial" && rooms[room]) {
     roomNotice = (
       <>
         {roomNotice}
-        <p>Some schedule data failed to load, so this schedule may be incomplete.</p>
+        <p>{t("Some schedule data failed to load, so this schedule may be incomplete.")}</p>
       </>
     );
   }
@@ -258,6 +273,7 @@ export function BuildingPanel({
   // On phones the panel is a bottom sheet: drag its handle up to expand it,
   // down to shrink or close it
   const moment = useMoment();
+  const t = useT();
   const onView = useContext(OnView);
   const panelRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y: number; height: number; moved: boolean } | null>(null);
@@ -303,7 +319,7 @@ export function BuildingPanel({
     >
       <button
         className="sheet-handle"
-        aria-label={expanded ? "Shrink panel" : "Expand panel"}
+        aria-label={expanded ? t("Shrink panel") : t("Expand panel")}
         aria-expanded={expanded}
         onPointerDown={(e) => {
           const panel = panelRef.current;

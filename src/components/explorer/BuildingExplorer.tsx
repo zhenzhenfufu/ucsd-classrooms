@@ -5,6 +5,7 @@ import type {
   IntroMode,
 } from "../../explorer3d/IndoorScene";
 import { BuildingDatum } from "../../lib/buildings";
+import { useT } from "../../lib/i18n";
 import { loadCampus } from "../../lib/indoor/campus";
 import { RoomMeeting } from "../../lib/coursesToClassrooms";
 import {
@@ -124,6 +125,7 @@ export function BuildingExplorer({
   booking,
 }: BuildingExplorerProps) {
   const moment = useMoment();
+  const t = useT();
   const onView = useContext(OnView);
   const stageRef = useRef<HTMLDivElement>(null);
   const labelsRef = useRef<HTMLDivElement>(null);
@@ -305,15 +307,29 @@ export function BuildingExplorer({
       counts.set(floor, count);
     }
     for (const [floor, { rooms: total, busy }] of counts) {
+      const count = t(
+        shell
+          ? total === 1
+            ? "{count} classroom"
+            : "{count} classrooms"
+          : total === 1
+          ? "{count} unplaced classroom"
+          : "{count} unplaced classrooms",
+        { count: total }
+      );
       badges.set(
         floor,
-        `${total}${shell ? "" : " unplaced"} classroom${total === 1 ? "" : "s"}${
-          moment.type === "term" ? "" : busy > 0 ? ` · ● ${busy} in use` : " · ○ none in use"
+        `${count}${
+          moment.type === "term"
+            ? ""
+            : busy > 0
+            ? t(" · ● {count} in use", { count: busy })
+            : t(" · ○ none in use")
         }`
       );
     }
     return badges;
-  }, [shell, index, rooms, moment, availability, booking]);
+  }, [shell, index, rooms, moment, availability, booking, t]);
   const floorBadges = booking?.floorBadges ?? scheduleBadges;
   useEffect(() => {
     if (readyScene) {
@@ -408,13 +424,13 @@ export function BuildingExplorer({
   const reduceMotion = prefersReducedMotion();
   const message =
     layout.type === "error"
-      ? `${layout.error.message} The room list still works.`
+      ? t("{message} The room list still works.", { message: t(layout.error.message) })
       : engine.type === "webgl-error"
-      ? "The 3D view isn't available on this device or browser (WebGL couldn't start). The room list and schedules still work."
+      ? t("The 3D view isn't available on this device or browser (WebGL couldn't start). The room list and schedules still work.")
       : engine.type === "code-error"
-      ? "The 3D viewer failed to load. Check your connection; the room list still works."
+      ? t("The 3D viewer failed to load. Check your connection; the room list still works.")
       : engine.type === "context-lost"
-      ? "The 3D view was interrupted by the graphics driver. It will resume if the browser restores it; the room list still works."
+      ? t("The 3D view was interrupted by the graphics driver. It will resume if the browser restores it; the room list still works.")
       : null;
   const loading = !message && (layout.type === "loading" || engine.type === "loading");
   const unmappedRoom = room !== null && index && !selectedRoom && !unplaced ? room : null;
@@ -427,7 +443,7 @@ export function BuildingExplorer({
   return (
     <section
       className={`explorer ${introDone || !active ? "explorer-intro-done" : ""}`}
-      aria-label={`${building.code} indoor map`}
+      aria-label={t("{code} indoor map", { code: building.code })}
     >
       <header className="explorer-toolbar">
         <div className="explorer-title">
@@ -438,8 +454,8 @@ export function BuildingExplorer({
           view={{ type: "default" }}
           className="explorer-close"
           back={closeBuildingBack(room)}
-          aria-label="Close building and return to map"
-          title="Close"
+          aria-label={t("Close building and return to map")}
+          title={t("Close")}
         >
           <CloseIcon />
         </Link>
@@ -449,14 +465,14 @@ export function BuildingExplorer({
           <div className="explorer-labels" ref={labelsRef} />
         </div>
         {index && !message && (
-          <div className="explorer-floors" role="group" aria-label="Floors">
+          <div className="explorer-floors" role="group" aria-label={t("Floors")}>
             <button
               className="explorer-floor-btn"
               aria-pressed={display.floor === null}
               onClick={() => setDisplay((display) => ({ ...display, floor: null }))}
-              title="Show all floors"
+              title={t("Show all floors")}
             >
-              All
+              {t("All")}
             </button>
             {floors.map((floor) => (
               <button
@@ -475,17 +491,17 @@ export function BuildingExplorer({
           </div>
         )}
         {index && !message && (
-          <div className="explorer-view-controls" role="group" aria-label="View">
+          <div className="explorer-view-controls" role="group" aria-label={t("View")}>
             {display.floor && index.floorsById.get(display.floor)?.planDrawing && (
               <>
                 <button className="explorer-view-btn" aria-pressed={showFloorMap}
                   onClick={() => setShowFloorMap((shown) => !shown)}
-                  title="Show the library's original floor map beneath the 3D details">
-                  Floor map
+                  title={t("Show the library's original floor map beneath the 3D details")}>
+                  {t("Floor map")}
                 </button>
                 <button className="explorer-view-btn" onClick={() => sceneRef.current?.topView()}
-                  title="Look straight down at this floor">
-                  Top view
+                  title={t("Look straight down at this floor")}>
+                  {t("Top view")}
                 </button>
               </>
             )}
@@ -495,41 +511,41 @@ export function BuildingExplorer({
               onClick={() =>
                 setDisplay((display) => ({ ...display, exploded: !display.exploded }))
               }
-              title="Separate floors vertically"
+              title={t("Separate floors vertically")}
             >
-              Exploded
+              {t("Exploded")}
             </button>
             {showViewTools && (
               <>
                 <button
                   className="explorer-view-btn"
                   onClick={() => sceneRef.current?.rotate(-30)}
-                  aria-label="Rotate left"
-                  title="Rotate left"
+                  aria-label={t("Rotate left")}
+                  title={t("Rotate left")}
                 >
                   ⟲
                 </button>
                 <button
                   className="explorer-view-btn"
                   onClick={() => sceneRef.current?.rotate(30)}
-                  aria-label="Rotate right"
-                  title="Rotate right"
+                  aria-label={t("Rotate right")}
+                  title={t("Rotate right")}
                 >
                   ⟳
                 </button>
                 <button
                   className="explorer-view-btn"
                   onClick={() => sceneRef.current?.zoom(0.8)}
-                  aria-label="Zoom in"
-                  title="Zoom in"
+                  aria-label={t("Zoom in")}
+                  title={t("Zoom in")}
                 >
                   +
                 </button>
                 <button
                   className="explorer-view-btn"
                   onClick={() => sceneRef.current?.zoom(1.25)}
-                  aria-label="Zoom out"
-                  title="Zoom out"
+                  aria-label={t("Zoom out")}
+                  title={t("Zoom out")}
                 >
                   −
                 </button>
@@ -538,15 +554,15 @@ export function BuildingExplorer({
             <button
               className="explorer-view-btn"
               onClick={() => sceneRef.current?.resetView()}
-              title="Reset view"
+              title={t("Reset view")}
             >
-              Reset
+              {t("Reset")}
             </button>
             <button
               className="explorer-view-btn"
               aria-expanded={showViewTools}
-              aria-label={showViewTools ? "Fewer view controls" : "More view controls"}
-              title={showViewTools ? "Fewer view controls" : "Rotate and zoom buttons"}
+              aria-label={showViewTools ? t("Fewer view controls") : t("More view controls")}
+              title={showViewTools ? t("Fewer view controls") : t("Rotate and zoom buttons")}
               onClick={() => setShowViewTools((show) => !show)}
             >
               {showViewTools ? "›" : "⋯"}
@@ -555,7 +571,7 @@ export function BuildingExplorer({
         )}
         {loading && (
           <p className="explorer-message explorer-loading" role="status">
-            {reduceMotion ? "Loading indoor map…" : "Loading indoor map"}
+            {reduceMotion ? t("Loading indoor map…") : t("Loading indoor map")}
           </p>
         )}
         {message && (
@@ -570,7 +586,7 @@ export function BuildingExplorer({
                 <strong>
                   {building.code} {unmappedRoom}
                 </strong>
-                : indoor location not mapped yet.
+                {t(": indoor location not mapped yet.")}
                 {unmappedReason ? ` ${unmappedReason}` : ""}
               </>
             ) : unplaced ? (
@@ -578,9 +594,12 @@ export function BuildingExplorer({
                 <strong>
                   {building.code} {room}
                 </strong>
-                {` · ${unplaced.room.basis === "room-number" ? "probably " : ""}${
-                  unplaced.floor.label
-                }; position on the floor not mapped`}
+                {t(
+                  unplaced.room.basis === "room-number"
+                    ? " · probably {floor}; position on the floor not mapped"
+                    : " · {floor}; position on the floor not mapped",
+                  { floor: unplaced.floor.label }
+                )}
               </>
             ) : selectedRoom && booking ? (
               booking.renderSelection(selectedRoom.id)
@@ -591,14 +610,14 @@ export function BuildingExplorer({
                 </strong>
                 {selectedRoom.name ? ` · ${selectedRoom.name}` : ""} ·{" "}
                 {index.floorsById.get(selectedRoom.floor)?.label}
-                {statusSummary ? ` · ${ROOM_STATUS_TEXT[statusSummary]}` : ""}
+                {statusSummary ? ` · ${t(ROOM_STATUS_TEXT[statusSummary])}` : ""}
               </>
             ) : booking ? (
               booking.hint
             ) : shell ? (
-              "Exterior from the campus map. Pick a floor or a room in the list."
+              t("Exterior from the campus map. Pick a floor or a room in the list.")
             ) : (
-              "Drag to rotate, pinch or scroll to zoom. Tap a room for its schedule."
+              t("Drag to rotate, pinch or scroll to zoom. Tap a room for its schedule.")
             )}
           </p>
         )}
@@ -606,7 +625,7 @@ export function BuildingExplorer({
       {index && !message && (
         <footer className="explorer-footer">
           {!shell && (
-            <ul className="explorer-legend" aria-label="Room color legend">
+            <ul className="explorer-legend" aria-label={t("Room color legend")}>
               {(booking
                 ? booking.legend
                 : moment.type === "term"
@@ -619,11 +638,11 @@ export function BuildingExplorer({
                   <span className="explorer-swatch" aria-hidden="true">
                     {STATUS_GLYPHS[kind]}
                   </span>
-                  {LEGEND_TEXT[kind] ?? ROOM_STATUS_TEXT[kind]}
+                  {t(LEGEND_TEXT[kind] ?? ROOM_STATUS_TEXT[kind])}
                 </li>
               ))}
               <li className="explorer-legend-note">
-                {booking ? booking.legendNote : "From class schedules, not live occupancy"}
+                {booking ? booking.legendNote : t("From class schedules, not live occupancy")}
               </li>
             </ul>
           )}
@@ -633,7 +652,7 @@ export function BuildingExplorer({
               aria-expanded={showSources}
               onClick={() => setShowSources((show) => !show)}
             >
-              {PROVENANCE_LABELS[index.building.geometryStatus]}
+              {t(PROVENANCE_LABELS[index.building.geometryStatus])}
             </button>
             {showSources && (
               <div className="explorer-sources">
@@ -641,11 +660,13 @@ export function BuildingExplorer({
                 {index.building.geometryStatus === "source-traced" && (
                   <p>
                     {index.building.floors.some((floor) => floor.vertical.estimated)
-                      ? "Some floor elevations and heights are estimated. "
-                      : "Floor elevations and heights follow the cited sources. "}
-                    Exploded spacing, room and furniture heights, and access symbols are illustrative.
+                      ? t("Some floor elevations and heights are estimated. ")
+                      : t("Floor elevations and heights follow the cited sources. ")}
+                    {t("Exploded spacing, room and furniture heights, and access symbols are illustrative.")}
                     {index.building.coordinateSystem.northDeg !== null &&
-                      ` North is about ${index.building.coordinateSystem.northDeg}° clockwise from the top of the source maps.`}
+                      t(" North is about {deg}° clockwise from the top of the source maps.", {
+                        deg: index.building.coordinateSystem.northDeg,
+                      })}
                   </p>
                 )}
                 <ul>
@@ -659,7 +680,7 @@ export function BuildingExplorer({
                         <span>{source.title}</span>
                       )}{" "}
                       <span className="explorer-source-meta">
-                        (accessed {source.accessed})
+                        {t("(accessed {date})", { date: source.accessed })}
                       </span>
                     </li>
                   ))}

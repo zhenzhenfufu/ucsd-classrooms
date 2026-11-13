@@ -94,3 +94,7 @@
   .week-stepper > button { width: 44px; }
   .week-stepper { min-height: 44px; }
 }
+.week-ics { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--link); }
+.week-ics .icon { width: 18px; height: 18px; fill: currentColor; }
+.week-ics:hover { background-color: var(--icon-button-hover); }
+.week-room-list li > .week-ics + .week-book { margin-left: -6px; }

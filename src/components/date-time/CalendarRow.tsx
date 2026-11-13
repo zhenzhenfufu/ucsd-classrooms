@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
 import { Day, DAY_NUMS } from "../../lib/Day";
 import { getHolidays } from "../../lib/holidays";
-import { Season, termCode, TermDays, termName } from "../../lib/terms";
+import { localTermName, useLocale, useT } from "../../lib/i18n";
+import { Season, termCode, TermDays } from "../../lib/terms";
 import { AbbrevHeading } from "../AbbrevHeading";
 
 export type CalendarRowProps = {
@@ -23,11 +24,13 @@ export function CalendarRow({
 }
 
 export function CalendarHeaderRow() {
+  const t = useT();
+  const locale = useLocale();
   return (
-    <CalendarRow className="calendar-header-row" week={<span>Wk</span>}>
+    <CalendarRow className="calendar-header-row" week={<span>{t("Wk")}</span>}>
       {DAY_NUMS.map((day) => (
         <div key={day} className={`calendar-item calendar-week-day`}>
-          {Day.dayName(day, "short")}
+          {Day.dayName(day, "short", locale)}
         </div>
       ))}
     </CalendarRow>
@@ -42,6 +45,7 @@ export function CalendarQuarterHeadingRow({
   year,
   season,
 }: CalendarQuarterHeadingRowProps) {
+  const t = useT();
   return (
     <CalendarRow className="calendar-heading-row calendar-quarter-heading-row">
       <div className="gradient gradient-bg gradient-bottom" />
@@ -50,7 +54,7 @@ export function CalendarQuarterHeadingRow({
         abbrev={termCode(year, season)}
         className="calendar-heading calendar-quarter-heading"
       >
-        {termName(year, season)}
+        {localTermName(t, year, season)}
       </AbbrevHeading>
     </CalendarRow>
   );
@@ -62,10 +66,11 @@ export type CalendarMonthHeadingRowProps = {
 export function CalendarMonthHeadingRow({
   month,
 }: CalendarMonthHeadingRowProps) {
+  const locale = useLocale();
   return (
     <CalendarRow className="calendar-heading-row calendar-month-heading-row">
       <h3 className="calendar-heading calendar-month-heading">
-        {Day.monthName(month)}
+        {Day.monthName(month, "long", locale)}
       </h3>
     </CalendarRow>
   );

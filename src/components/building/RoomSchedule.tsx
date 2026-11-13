@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { RoomMeeting } from "../../lib/coursesToClassrooms";
 import { Day } from "../../lib/Day";
 import { getClassroomSeatMapSearchUrl } from "../../lib/classroomSeatMap";
+import { useLocale, useT } from "../../lib/i18n";
 import { meetingTypes } from "../../lib/meeting-types";
 import {
   doesMeetingHappen,
@@ -9,6 +10,7 @@ import {
   useMoment,
 } from "../../lib/moment-context";
 import { Link } from "../Link";
+import { FavoriteButton } from "./FavoriteButton";
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7];
 const WEEKDAYS = [1, 2, 3, 4, 5];
@@ -31,16 +33,21 @@ export function RoomSchedule({
   emptyMessage,
 }: RoomScheduleProps) {
   const moment = useMoment();
+  const t = useT();
+  const locale = useLocale();
   const [day, setDay] = useState<number | null>(null);
 
   if (meetings.length === 0) {
     return (
       <>
         {notice && <div className="room-notice">{notice}</div>}
+        <div className="room-actions">
+          <FavoriteButton building={building} room={room} />
+        </div>
         <div className="empty">
           <p>
             {emptyMessage ??
-              "No classes are listed for this room this week."}
+              t("No classes are listed for this room this week.")}
           </p>
         </div>
       </>
@@ -77,13 +84,14 @@ export function RoomSchedule({
     <div className="schedule">
       {notice && <div className="room-notice">{notice}</div>}
       <div className="room-actions">
+        <FavoriteButton building={building} room={room} />
         <a
           href={getClassroomSeatMapSearchUrl(building, room)}
           target="_blank"
           rel="noreferrer"
           className="seat-map-link"
         >
-          Search seat map for {building} {room}
+          {t("Search seat map for {room}", { room: `${building} ${room}` })}
         </a>
       </div>
       <div className="day-names-wrapper">
@@ -99,7 +107,7 @@ export function RoomSchedule({
                 setDay((day) => (weekDay === day ? null : weekDay))
               }
             >
-              {Day.dayName(weekDay, "short")}
+              {Day.dayName(weekDay, "short", locale)}
             </button>
           ))}
         </div>
@@ -119,11 +127,11 @@ export function RoomSchedule({
               style={{ height: `${(latest - earliest) / SCALE}px` }}
             >
               {holiday ? (
-                <p className="schedule-holiday-notice">{holiday}</p>
+                <p className="schedule-holiday-notice">{t(holiday)}</p>
               ) : dayBeforeQuarter ? (
                 // For week 0
                 <p className="schedule-holiday-notice">
-                  Quarter begins tomorrow
+                  {t("Quarter begins tomorrow")}
                 </p>
               ) : null}
               {actualMeetings[day]
@@ -145,9 +153,15 @@ export function RoomSchedule({
                     <div className="meeting-name">
                       {meeting.course} (
                       <abbr
-                        title={`${meetingTypes[meeting.type]} with up to ${
-                          meeting.capacity
-                        } student${meeting.capacity === 1 ? "" : "s"}`}
+                        title={t(
+                          meeting.capacity === 1
+                            ? "{type} with up to {count} student"
+                            : "{type} with up to {count} students",
+                          {
+                            type: t(`${meetingTypes[meeting.type]}`),
+                            count: meeting.capacity,
+                          }
+                        )}
                       >
                         {meeting.type}
                       </abbr>
@@ -159,7 +173,7 @@ export function RoomSchedule({
                     {meeting.special && (
                       <abbr
                         className="special-summer"
-                        title="This meeting is from a Special Summer Session course."
+                        title={t("This meeting is from a Special Summer Session course.")}
                       >
                         S3
                       </abbr>
@@ -183,7 +197,7 @@ export function RoomSchedule({
       <footer className="disclaimer-wrapper">
         <div className="gradient gradient-bg gradient-bottom" />
         <p className="disclaimer">
-          Note: some classes book rooms but don't meet.
+          {t("Note: some classes book rooms but don't meet.")}
         </p>
       </footer>
     </div>

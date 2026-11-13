@@ -1,6 +1,7 @@
 import { memo, useCallback } from "react";
 import { BuildingDatum } from "../lib/buildings";
 import { RoomMeeting } from "../lib/coursesToClassrooms";
+import { useT } from "../lib/i18n";
 import { isMeetingOngoing, useMoment } from "../lib/moment-context";
 import { mapPoint } from "../lib/locations";
 import { Link } from "./Link";
@@ -27,6 +28,7 @@ export const BuildingButton = memo(function BuildingButton({
   studyRooms,
 }: BuildingButtonProps) {
   const moment = useMoment();
+  const t = useT();
 
   const college = building.college;
 
@@ -77,15 +79,16 @@ export const BuildingButton = memo(function BuildingButton({
         top: `calc(${y}px * var(--map-zoom))`,
       }}
       elemRef={ref}
-      title={`${building.name}: ${
-        studyRooms
+      title={t("{name}: {summary}", {
+        name: building.name,
+        summary: studyRooms
           ? inUse !== null
-            ? `${inUse} of ${total} study rooms free to book`
-            : `${total} bookable study rooms`
+            ? t("{free} of {total} study rooms free to book", { free: inUse, total })
+            : t("{total} bookable study rooms", { total })
           : inUse !== null
-          ? `${inUse} of ${total} classrooms in use`
-          : `${total} classrooms`
-      }`}
+          ? t("{inUse} of {total} classrooms in use", { inUse, total })
+          : t("{count} classrooms", { count: total }),
+      })}
     >
       {building.code}
       <span className="room-count">

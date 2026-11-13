@@ -1,5 +1,6 @@
 import { memo, ReactNode, useEffect, useRef, useState } from "react";
 import { Day, DayId } from "../../lib/Day";
+import { useT } from "../../lib/i18n";
 import { getTermDays, seasons, TermDays } from "../../lib/terms";
 import {
   CalendarHeaderRow,
@@ -139,6 +140,7 @@ export type CalendarProps = {
   freeScroll: () => void;
 };
 export function Calendar({ freeScroll, ...props }: CalendarProps) {
+  const t = useT();
   const { date, scrollMode } = props;
   const selectedStart = date.month <= 6 ? date.year - 1 : date.year;
   const selectedEnd = date.month >= 9 ? date.year + 1 : date.year;
@@ -220,7 +222,7 @@ export function Calendar({ freeScroll, ...props }: CalendarProps) {
             }
           }}
         >
-          Show {start - 1}
+          {t("Show {year}", { year: start - 1 })}
         </button>
       </CalendarRow>
       {calendars}
@@ -233,7 +235,7 @@ export function Calendar({ freeScroll, ...props }: CalendarProps) {
             freeScroll();
           }}
         >
-          Show {end + 1}
+          {t("Show {year}", { year: end + 1 })}
         </button>
       </CalendarRow>
       <div className="gradient gradient-sticky gradient-bottom" />

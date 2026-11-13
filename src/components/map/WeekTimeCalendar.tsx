@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
 import { AvailabilityRange } from "../../lib/availabilityRanges";
 import { Day } from "../../lib/Day";
+import { Translate, useLocale, useT } from "../../lib/i18n";
 import { Moment } from "../../lib/now";
 import { Time } from "../../lib/Time";
 import "./weekTimeCalendar.css";
@@ -42,15 +43,19 @@ const MINUTES = Array.from({ length: DAY_END / STEP }, (_, index) => index * STE
 const HOURS = Array.from({ length: 25 }, (_, index) => index * 60);
 /** Pixels from the scroll area's edge where dragging scrolls it. */
 const EDGE = 36;
-const timeLabel = (minute: number) => minute === DAY_END ? "midnight" : Time.from(minute).toString();
+const timeLabel = (minute: number, t: Translate) => minute === DAY_END ? t("midnight") : Time.from(minute).toString();
 /** "9 am" or "9:15 am", for labels inside narrow slots. */
 const shortTime = (minute: number) => minute === DAY_END ? "12 am" : Time.from(minute).toString().replace(":00", "");
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
-function duration(minutes: number): string {
+function duration(minutes: number, t: Translate): string {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
-  return hours === 0 ? `${rest} min` : rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
+  return hours === 0
+    ? t("{minutes} min", { minutes: rest })
+    : rest === 0
+    ? t("{hours} hr", { hours })
+    : t("{hours} hr {minutes} min", { hours, minutes: rest });
 }
 
 /** Give overlapping selections separate lanes so every block stays clickable. */
@@ -80,6 +85,8 @@ function rangeLanes(ranges: CalendarRange[]) {
 }
 
 export function WeekTimeCalendar({ days, clock, ranges, activeId, onSelect, onChange, onRemove, onActivate, disabled, open }: Props) {
+  const t = useT();
+  const locale = useLocale();
   const helpId = useId();
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollPosition = useRef("");
@@ -408,20 +415,23 @@ export function WeekTimeCalendar({ days, clock, ranges, activeId, onSelect, onCh
   const activeShown = shown.find((item) => item.id === activeId);
 
   return (
-    <section className={`week-calendar ${dragging ? "week-calendar-dragging" : ""}`} aria-label="Select time slots on this week's calendar" aria-describedby={helpId}
+    <section className={`week-calendar ${dragging ? "week-calendar-dragging" : ""}`} aria-label={t("Select time slots on this week's calendar")} aria-describedby={helpId}
       onKeyDown={(event) => { if (event.key === "Escape" && gesture.current) { event.preventDefault(); ignoreClick.current = true; stopGesture(); } }}>
       <div className="week-calendar-help" id={helpId}>
-        <span className="week-calendar-desktop-help">Click to add an hour, or drag to choose a range. Drag a slot or its edges to adjust.</span>
-        <span className="week-calendar-mobile-help">Tap a time to add an hour, then drag its edges to adjust. Swipe to change days.</span>
-        <span className="week-calendar-zone">San Diego time</span>
+        <span className="week-calendar-desktop-help">{t("Click to add an hour, or drag to choose a range. Drag a slot or its edges to adjust.")}</span>
+        <span className="week-calendar-mobile-help">{t("Tap a time to add an hour, then drag its edges to adjust. Swipe to change days.")}</span>
+        <span className="week-calendar-zone">{t("San Diego time")}</span>
       </div>
-      <div className="week-calendar-mobile-days" aria-label="Choose calendar day">
+      <div className="week-calendar-mobile-days" aria-label={t("Choose calendar day")}>
         {days.map((day) => {
           const count = ranges.filter((item) => item.range.date.id === day.id).length;
           return <button type="button" key={day.id} aria-pressed={day.id === visibleDay?.id}
             disabled={day < clock.date} className={day.id === clockDay ? "calendar-today" : ""}
-            onClick={() => chooseDay(day)} aria-label={`${day.toString([], { weekday: "long", month: "long", day: "numeric" })}${count ? `, ${count} slot${count === 1 ? "" : "s"}` : ""}`}>
-            <span>{day.dayName("short")}</span><strong>{day.date}</strong>
+            onClick={() => chooseDay(day)} aria-label={count
+              ? t(count === 1 ? "{date}, {count} slot" : "{date}, {count} slots", {
+                date: day.toString(locale, { weekday: "long", month: "long", day: "numeric" }), count })
+              : day.toString(locale, { weekday: "long", month: "long", day: "numeric" })}>
+            <span>{day.dayName("short", locale)}</span><strong>{day.date}</strong>
             <i className="calendar-day-dots" aria-hidden="true">{Array.from({ length: Math.min(count, 3) }, (_, i) => <b key={i} />)}</i>
           </button>;
         })}
@@ -430,7 +440,7 @@ export function WeekTimeCalendar({ days, clock, ranges, activeId, onSelect, onCh
         <div className="week-calendar-head" aria-hidden="true">
           <span className="week-calendar-zone">PT</span>
           {days.map((day) => <div key={day.id} className={`${day.id === clockDay ? "calendar-today" : ""} ${day < clock.date ? "calendar-past-day" : ""}`}>
-            <span>{day.dayName("short")}</span><strong>{day.date}</strong>
+            <span>{day.dayName("short", locale)}</span><strong>{day.date}</strong>
           </div>)}
         </div>
         <div className="week-calendar-body" onPointerDown={bodyPointerDown} onPointerUp={bodyPointerUp}
@@ -445,12 +455,15 @@ export function WeekTimeCalendar({ days, clock, ranges, activeId, onSelect, onCh
             const visible = day.id === visibleDay?.id;
             return <div className={`week-calendar-day ${visible ? "calendar-day-visible" : ""}`}
               key={day.id}
-              data-date={day.toString()} data-day-id={day.id} role="group" aria-label={day.toString([], { weekday: "long", month: "long", day: "numeric" })}>
+              data-date={day.toString()} data-day-id={day.id} role="group" aria-label={day.toString(locale, { weekday: "long", month: "long", day: "numeric" })}>
               {MINUTES.map((minute) => <button type="button" key={minute} data-minute={minute}
                 className={`week-calendar-cell ${minute % 60 === 0 ? "calendar-hour" : ""} ${isPast(day.id, minute) ? "calendar-past" : ""}`}
                 disabled={isPast(day.id, minute)}
                 tabIndex={focused.day === day.id && focused.minute === minute ? 0 : -1}
-                aria-label={`${day.toString([], { weekday: "long", month: "short", day: "numeric" })}, ${timeLabel(minute)}. Add a 1-hour slot`}
+                aria-label={t("{date}, {time}. Add a 1-hour slot", {
+                  date: day.toString(locale, { weekday: "long", month: "short", day: "numeric" }),
+                  time: timeLabel(minute, t),
+                })}
                 onFocus={() => setFocus({ day: day.id, minute })}
                 onPointerDown={(event) => cellPointerDown(event, day, minute)}
                 onKeyDown={(event) => keyCell(event, day, minute)}
@@ -462,14 +475,15 @@ export function WeekTimeCalendar({ days, clock, ranges, activeId, onSelect, onCh
                 const slot = item.slot ?? ranges.findIndex((candidate) => candidate.id === item.id) + 1;
                 const start = +item.range.start;
                 const end = +item.range.end;
-                const label = `Slot ${slot}: ${timeLabel(start)}–${timeLabel(end)}`;
+                const label = t("Slot {n}: {start}–{end}", { n: slot, start: timeLabel(start, t), end: timeLabel(end, t) });
                 const isActive = item.id === activeId;
                 const compact = end - start <= 30;
                 return <div key={item.id} data-color={(slot - 1) % 4}
                   className={`week-calendar-event ${isActive ? "calendar-event-active" : ""} ${adjusting?.id === item.id ? "calendar-event-adjusting" : ""} ${compact ? "calendar-event-compact" : ""}`}
                   style={{ top: `${start / DAY_END * 100}%`, height: `${(end - start) / DAY_END * 100}%`,
                     left: `calc(${lane / total * 100}% + 2px)`, width: `calc(${100 / total}% - 4px)` }}>
-                  <button type="button" className="calendar-event-body" aria-label={`${label}, ${item.range.date.dayName()}. Arrow keys move it, Shift+arrows change its end, Delete removes it`}
+                  <button type="button" className="calendar-event-body" aria-label={t("{label}, {day}. Arrow keys move it, Shift+arrows change its end, Delete removes it", {
+                      label, day: item.range.date.dayName("long", locale) })}
                     title={label} aria-pressed={isActive}
                     onPointerDown={(event) => eventPointerDown(event, item, "move")}
                     onKeyDown={(event) => keyEvent(event, item)}
@@ -487,7 +501,7 @@ export function WeekTimeCalendar({ days, clock, ranges, activeId, onSelect, onCh
               })}
               {draw && <div className="week-calendar-preview" aria-hidden="true"
                 style={{ top: `${draw.start / DAY_END * 100}%`, height: `${(draw.end - draw.start) / DAY_END * 100}%` }}>
-                <span>{timeLabel(draw.start)}–{timeLabel(draw.end)}</span>
+                <span>{timeLabel(draw.start, t)}–{timeLabel(draw.end, t)}</span>
               </div>}
               {day.id === clockDay && <div className="week-calendar-now" aria-hidden="true" style={{ top: `${clockMinute / DAY_END * 100}%` }} />}
             </div>;
@@ -496,13 +510,13 @@ export function WeekTimeCalendar({ days, clock, ranges, activeId, onSelect, onCh
       </div>
       <div className="week-calendar-status" role="status" aria-live="polite">
         {preview ? <span className="week-calendar-status-live">
-          {Day.fromId(preview.day).dayName("short")} · {timeLabel(preview.start)}–{timeLabel(preview.end)} · <strong>{duration(preview.end - preview.start)}</strong>
+          {Day.fromId(preview.day).dayName("short", locale)} · {timeLabel(preview.start, t)}–{timeLabel(preview.end, t)} · <strong>{duration(preview.end - preview.start, t)}</strong>
         </span>
           : activeShown ? <>
-            <span>Slot {activeShown.slot ?? ranges.indexOf(activeShown) + 1} · {activeShown.range.date.dayName("short")} {timeLabel(+activeShown.range.start)}–{timeLabel(+activeShown.range.end)} · {duration(+activeShown.range.end - +activeShown.range.start)}</span>
-            <button type="button" onClick={() => onRemove(activeShown.id)}>Remove</button>
+            <span>{t("Slot {n}", { n: activeShown.slot ?? ranges.indexOf(activeShown) + 1 })} · {activeShown.range.date.dayName("short", locale)} {timeLabel(+activeShown.range.start, t)}–{timeLabel(+activeShown.range.end, t)} · {duration(+activeShown.range.end - +activeShown.range.start, t)}</span>
+            <button type="button" onClick={() => onRemove(activeShown.id)}>{t("Remove")}</button>
           </>
-          : <span>{disabled ? "10 time slots selected. Remove one to add another." : "Add as many as 10 slots across the week."}</span>}
+          : <span>{disabled ? t("10 time slots selected. Remove one to add another.") : t("Add as many as 10 slots across the week.")}</span>}
       </div>
     </section>
   );

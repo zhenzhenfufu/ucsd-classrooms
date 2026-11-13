@@ -1,5 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Day } from "../../lib/Day";
+import { useT } from "../../lib/i18n";
 import { Time } from "../../lib/Time";
 import { inPT } from "../../lib/now";
 import { Calendar, ScrollMode } from "./Calendar";
@@ -36,6 +37,7 @@ export function DateTimePanel({
   terms,
   footer,
 }: DateTimePanelProps) {
+  const t = useT();
   const [scrollMode, setScrollMode] = useState<ScrollMode>("init");
 
   const handleCalendarDate_s = useStableCallback((date: Day) => {
@@ -55,9 +57,9 @@ export function DateTimePanel({
       }}
     >
       <div className="date-time-header">
-        <h2 className="panel-label">Show schedules for</h2>
+        <h2 className="panel-label">{t("Show schedules for")}</h2>
         {closeable && (
-          <button className="filled-icon-btn close-date-btn">Close</button>
+          <button className="filled-icon-btn close-date-btn">{t("Close")}</button>
         )}
       </div>
       <div className="date-time-flex">
@@ -75,9 +77,9 @@ export function DateTimePanel({
             }}
           />
           <span>
-            Live
+            {t("Live")}
             <span className="tz-note">
-              Follow the current time{inPT() ? "" : " in San Diego"}
+              {inPT() ? t("Follow the current time") : t("Follow the current time in San Diego")}
             </span>
           </span>
         </label>
@@ -90,13 +92,13 @@ export function DateTimePanel({
               setScrollMode("date-edited");
             }}
           >
-            Today
+            {t("Today")}
           </button>
         )}
       </div>
       <div className="date-time-fields">
         <label className="date-time-field">
-          <span className="field-label">Date</span>
+          <span className="field-label">{t("Date")}</span>
           <input
             type="date"
             name="date"
@@ -115,7 +117,7 @@ export function DateTimePanel({
           />
         </label>
         <div className="date-time-field">
-          <span className="field-label">Time</span>
+          <span className="field-label">{t("Time")}</span>
           <TimeWheel
             time={time}
             live={useNow}
@@ -129,7 +131,7 @@ export function DateTimePanel({
         </div>
       </div>
       <div className="date-time-field date-time-terms">
-        <span className="field-label">Quarter</span>
+        <span className="field-label">{t("Quarter")}</span>
         {terms}
       </div>
       <Calendar

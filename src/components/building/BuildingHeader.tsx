@@ -1,4 +1,5 @@
 import { BuildingDatum } from "../../lib/buildings";
+import { useT } from "../../lib/i18n";
 import { useLast } from "../../lib/useLast";
 import { AbbrevHeading } from "../AbbrevHeading";
 import { BackIcon } from "../icons/BackIcon";
@@ -15,6 +16,7 @@ export type BuildingHeaderProps = {
 /** The building panel's colored header, with back and close buttons. */
 export function BuildingHeader({ building, room }: BuildingHeaderProps) {
   const { code, images, college, name } = building;
+  const t = useT();
   const lastRoom = useLast("", room);
   const imageUrl = images[0]?.url; // TODO: Compress
   return (
@@ -33,7 +35,7 @@ export function BuildingHeader({ building, room }: BuildingHeaderProps) {
       <Link
         view={room ? { type: "building", building: code } : null}
         className="icon-btn back"
-        aria-label="Back to room list"
+        aria-label={t("Back to room list")}
         back={([previous]) => {
           // If the user just came from a room list then go back to it
           if (previous && previous.type === "building" && !previous.room) {
@@ -58,7 +60,7 @@ export function BuildingHeader({ building, room }: BuildingHeaderProps) {
       <Link
         view={{ type: "default" }}
         className="icon-btn close"
-        aria-label="Close"
+        aria-label={t("Close")}
         back={closeBuildingBack(room)}
       >
         <CloseIcon />

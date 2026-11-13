@@ -3,6 +3,8 @@ import { AvailabilityRange, validateWeekRange } from "../../lib/availabilityRang
 import { buildings } from "../../lib/buildings";
 import { CampusRangeAvailability, findCampusWeekAvailability } from "../../lib/campusWeekAvailability";
 import { Day } from "../../lib/Day";
+import { Translate, useLocale, useT } from "../../lib/i18n";
+import { downloadIcs } from "../../lib/ics";
 import { bookingUrl } from "../../lib/library/geisel";
 import { findWeekAvailability, WeekRangeResult } from "../../lib/library/weekAvailability";
 import { Moment, now } from "../../lib/now";
@@ -36,9 +38,31 @@ function parseDraft(draft: Draft): AvailabilityRange | null {
   return date && date.toString() === draft.date && start && end ? { date, start, end } : null;
 }
 
-function rangeTitle(range: AvailabilityRange): string {
-  const day = range.date.toString([], { weekday: "short", month: "short", day: "numeric" });
-  return `${day} · ${range.start}–${+range.end === 1440 ? "midnight" : range.end}`;
+function rangeTitle(range: AvailabilityRange, t: Translate, locale: string): string {
+  const day = range.date.toString(locale, { weekday: "short", month: "short", day: "numeric" });
+  return `${day} · ${range.start}–${+range.end === 1440 ? t("midnight") : range.end}`;
+}
+
+/** Saves the slot as a study session in the user's calendar app. */
+function addToCalendar(range: AvailabilityRange, building: string, room: string, title: string, place: string, t: Translate) {
+  const link = new URL(`?building=${encodeURIComponent(building)}&room=${encodeURIComponent(room)}`, window.location.href);
+  downloadIcs(`study-${building}-${room}-${range.date.toString()}`.replace(/[^\w.-]+/g, "-"), [{
+    uid: `${building}-${room}-${range.date.toString()}-${+range.start}-${+range.end}@zhenzhenfufu.github.io`,
+    title, location: place, date: range.date, start: range.start, end: range.end,
+    description: t("No class was scheduled here for this slot when you saved it. Check the room before you go."),
+    url: link.toString(),
+  }]);
+}
+
+function CalendarButton({ label, onClick }: { label: string; onClick: () => void }) {
+  const t = useT();
+  return (
+    <button type="button" className="week-ics" onClick={onClick} aria-label={label} title={t("Add to calendar (.ics)")}>
+      <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
+        <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14zm-8-8h2v3h3v2h-3v3h-2v-3H8v-2h3z" />
+      </svg>
+    </button>
+  );
 }
 
 function RangeResults({ campus, library, expired }: {
@@ -47,45 +71,54 @@ function RangeResults({ campus, library, expired }: {
   expired: boolean;
 }) {
   const [limit, setLimit] = useState(20);
+  const t = useT();
+  const locale = useLocale();
   const range = campus.range;
+  const title = rangeTitle(range, t, locale);
   return (
-    <section className="week-result" aria-label={rangeTitle(range)}>
-      <h3>{rangeTitle(range)}</h3>
-      {expired ? <p className="week-note">This time slot has started or passed. Choose a future slot to check again.</p> : <>
+    <section className="week-result" aria-label={title}>
+      <h3>{title}</h3>
+      {expired ? <p className="week-note">{t("This time slot has started or passed. Choose a future slot to check again.")}</p> : <>
         <div className="week-result-counts">
-          <span>{campus.state === "ready" ? `${campus.rooms.length} classrooms` : "Classrooms unavailable"}</span>
-          <span>{library.state === "ready" ? `${library.spaces.length} Geisel rooms` : "Geisel unavailable"}</span>
+          <span>{campus.state === "ready" ? t("{count} classrooms", { count: campus.rooms.length }) : t("Classrooms unavailable")}</span>
+          <span>{library.state === "ready" ? t("{count} Geisel rooms", { count: library.spaces.length }) : t("Geisel unavailable")}</span>
         </div>
         <details className="week-source-results" open={library.state !== "ready" || library.spaces.length > 0}>
-          <summary>Geisel · free for the whole slot</summary>
-          {library.state === "error" ? <p className="week-note">{library.error}</p>
-            : library.state === "window-end" ? <p className="week-note">Reservations have not opened for this date.</p>
-            : library.spaces.length === 0 ? <p className="week-note">No room is bookable for this entire time slot.</p>
+          <summary>{t("Geisel · free for the whole slot")}</summary>
+          {library.state === "error" ? <p className="week-note">{library.error === undefined ? library.error : t(library.error)}</p>
+            : library.state === "window-end" ? <p className="week-note">{t("Reservations have not opened for this date.")}</p>
+            : library.spaces.length === 0 ? <p className="week-note">{t("No room is bookable for this entire time slot.")}</p>
             : <ul className="week-room-list">{library.spaces.map((space) => (
               <li key={space.key}>
                 <Link view={{ type: "building", building: "GEISEL", room: space.key }}
                   term={{ date: range.date, time: range.start }}>
-                  <strong>{space.title}</strong><small>Floor {space.floor.slice(1)} · {space.capacity} seats</small>
+                  <strong>{space.title}</strong><small>{t("Floor {floor} · {seats} seats", { floor: space.floor.slice(1), seats: space.capacity })}</small>
                 </Link>
+                <CalendarButton label={t("Add {name} on {when} to calendar", { name: space.title, when: title })}
+                  onClick={() => addToCalendar(range, "GEISEL", space.key, t("Study · {place}", { place: space.title }),
+                    `${space.title}, Geisel Library, UC San Diego`, t)} />
                 <a href={bookingUrl(space, range.date)} target="_blank" rel="noreferrer" className="week-book"
-                  aria-label={`Book ${space.title} on ${rangeTitle(range)} in LibCal`}>Book ↗</a>
+                  aria-label={t("Book {name} on {when} in LibCal", { name: space.title, when: title })}>{t("Book ↗")}</a>
               </li>
             ))}</ul>}
         </details>
         <details className="week-source-results" open>
-          <summary>Classrooms · no class scheduled during the slot</summary>
-          {campus.state !== "ready" ? <p className="week-note">{campus.error ?? "Complete schedules are unavailable for this date."}</p>
-            : campus.rooms.length === 0 ? <p className="week-note">No classroom has this entire time slot clear in the loaded schedules.</p>
+          <summary>{t("Classrooms · no class scheduled during the slot")}</summary>
+          {campus.state !== "ready" ? <p className="week-note">{t(campus.error ?? "Complete schedules are unavailable for this date.")}</p>
+            : campus.rooms.length === 0 ? <p className="week-note">{t("No classroom has this entire time slot clear in the loaded schedules.")}</p>
             : <>
               <ul className="week-room-list">{campus.rooms.slice(0, limit).map(({ building, room }) => (
                 <li key={`${building}/${room}`}>
                   <Link view={{ type: "building", building, room }} term={{ date: range.date, time: range.start }}>
                     <strong>{building} {room}</strong><small>{buildings[building]?.name}</small>
                   </Link>
+                  <CalendarButton label={t("Add {name} on {when} to calendar", { name: `${building} ${room}`, when: title })}
+                    onClick={() => addToCalendar(range, building, room, t("Study · {place}", { place: `${building} ${room}` }),
+                      `${building} ${room}${buildings[building] ? `, ${buildings[building].name}` : ""}, UC San Diego`, t)} />
                 </li>
               ))}</ul>
               {limit < campus.rooms.length && <button type="button" className="week-secondary"
-                onClick={() => setLimit((n) => n + 20)}>Show more ({campus.rooms.length - limit} remaining)</button>}
+                onClick={() => setLimit((n) => n + 20)}>{t("Show more ({count} remaining)", { count: campus.rooms.length - limit })}</button>}
             </>}
         </details>
       </>}
@@ -94,6 +127,8 @@ function RangeResults({ campus, library, expired }: {
 }
 
 export function WeekAvailabilityPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useT();
+  const locale = useLocale();
   const [clock, setClock] = useState(now);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -185,11 +220,11 @@ export function WeekAvailabilityPanel({ open, onClose }: { open: boolean; onClos
   };
   const addRange = (range: AvailabilityRange) => {
     const issue = validateWeekRange(range, now());
-    if (issue) { setError(issue); return; }
+    if (issue) { setError(t(issue)); return; }
     const duplicate = drafts.find((draft) => draft.date === range.date.toString() &&
       draft.start === range.start.toString(true) && draft.end === range.end.toString(true));
     if (duplicate) { setActiveId(duplicate.id); return; }
-    if (drafts.length >= MAX_RANGES) { setError("You can select up to 10 time slots. Remove a slot to add another."); return; }
+    if (drafts.length >= MAX_RANGES) { setError(t("You can select up to 10 time slots. Remove a slot to add another.")); return; }
     const id = nextId.current++;
     invalidate();
     setDrafts((rows) => [...rows, { id, date: range.date.toString(), start: range.start.toString(true), end: range.end.toString(true) }]);
@@ -220,29 +255,29 @@ export function WeekAvailabilityPanel({ open, onClose }: { open: boolean; onClos
   };
 
   return (
-    <aside id="week-availability-panel" className={`week-planner ${open ? "" : "week-planner-hidden"}`} aria-label="This week's free spaces"
+    <aside id="week-availability-panel" className={`week-planner ${open ? "" : "week-planner-hidden"}`} aria-label={t("This week's free spaces")}
       aria-hidden={!open} inert={!open}>
       <header className="free-rooms-header">
-        <div><h2 className="free-rooms-title">Plan this week</h2>
-          <p className="free-rooms-subtitle">{week.toString([], { month: "short", day: "numeric" })}–{week.add(6).toString([], { month: "short", day: "numeric" })} · San Diego time</p>
+        <div><h2 className="free-rooms-title">{t("Plan this week")}</h2>
+          <p className="free-rooms-subtitle">{week.toString(locale, { month: "short", day: "numeric" })}–{week.add(6).toString(locale, { month: "short", day: "numeric" })} · {t("San Diego time")}</p>
         </div>
-        <button className="icon-btn free-rooms-close" onClick={() => { requestVersion.current++; onClose(); }} aria-label="Close weekly planner"><CloseIcon /></button>
+        <button className="icon-btn free-rooms-close" onClick={() => { requestVersion.current++; onClose(); }} aria-label={t("Close weekly planner")}><CloseIcon /></button>
       </header>
       <div className="week-scroll">
-        <p className="week-intro">Pick your time on the calendar. Find classrooms and Geisel rooms free for each entire slot.</p>
-        {hasOldDates && <p className="week-error" role="status">A new week has started. Clear all or choose dates in this week.</p>}
+        <p className="week-intro">{t("Pick your time on the calendar. Find classrooms and Geisel rooms free for each entire slot.")}</p>
+        {hasOldDates && <p className="week-error" role="status">{t("A new week has started. Clear all or choose dates in this week.")}</p>}
         <WeekTimeCalendar key={`${week.id}/${calendarVersion}`} days={days} clock={clock} ranges={calendarRanges} activeId={activeId}
           onSelect={addRange} onChange={changeRange} onRemove={remove} onActivate={setActiveId}
           disabled={drafts.length >= MAX_RANGES} open={open} />
         <form className="week-form" id={formId} onSubmit={(event) => {
           event.preventDefault();
-          if (!drafts.length) { setError("Select a time slot on the calendar first."); return; }
+          if (!drafts.length) { setError(t("Select a time slot on the calendar first.")); return; }
           const current = now();
           const ranges: AvailabilityRange[] = [];
           for (const [i, draft] of drafts.entries()) {
             const range = parseDraft(draft);
             const issue = range ? validateWeekRange(range, current) : "Choose a valid date, start and end time.";
-            if (issue) { setError(`Slot ${i + 1}: ${issue}`); return; }
+            if (issue) { setError(t("Slot {n}: {issue}", { n: i + 1, issue: t(issue) })); return; }
             ranges.push(range!);
           }
           requestVersion.current++;
@@ -250,46 +285,46 @@ export function WeekAvailabilityPanel({ open, onClose }: { open: boolean; onClos
           revealResults.current = true;
         }}>
           <div className="week-selection-heading">
-            <h3>Selected times <span>{drafts.length}/{MAX_RANGES}</span></h3>
-            {drafts.length > 0 && <button type="button" className="week-secondary" onClick={reset}>Clear all</button>}
+            <h3>{t("Selected times")} <span>{drafts.length}/{MAX_RANGES}</span></h3>
+            {drafts.length > 0 && <button type="button" className="week-secondary" onClick={reset}>{t("Clear all")}</button>}
           </div>
-          {drafts.length === 0 ? <p className="week-empty">No times selected yet. Select a block on the calendar to get started.</p> :
+          {drafts.length === 0 ? <p className="week-empty">{t("No times selected yet. Select a block on the calendar to get started.")}</p> :
             <ul className="week-selected-slots">{drafts.map((draft, i) => {
               const range = parseDraft(draft);
               return <li key={draft.id} data-color={i % 4} className={draft.id === activeId ? "week-selected-active" : ""}>
                 <button type="button" className="week-selected-pick" onClick={() => setActiveId(draft.id)} aria-pressed={draft.id === activeId}>
                   <span className="week-slot-number">{i + 1}</span>
-                  <span>{range ? rangeTitle(range) : `${draft.date} · ${draft.start}–${draft.end}`}</span>
+                  <span>{range ? rangeTitle(range, t, locale) : `${draft.date} · ${draft.start}–${draft.end}`}</span>
                 </button>
-                <button type="button" className="week-selected-remove" aria-label={`Remove slot ${i + 1}`} onClick={() => remove(draft.id)}><CloseIcon /></button>
+                <button type="button" className="week-selected-remove" aria-label={t("Remove slot {n}", { n: i + 1 })} onClick={() => remove(draft.id)}><CloseIcon /></button>
               </li>;
             })}</ul>}
           {activeDraft && <fieldset className="week-slot" key={activeDraft.id}>
-            <legend>Adjust slot {drafts.indexOf(activeDraft) + 1}</legend>
+            <legend>{t("Adjust slot {n}", { n: drafts.indexOf(activeDraft) + 1 })}</legend>
             <div className="week-slot-date">
-              <label><span>Day</span><select aria-label="Selected slot day" value={activeDraft.date}
+              <label><span>{t("Day")}</span><select aria-label={t("Selected slot day")} value={activeDraft.date}
                 onChange={(event) => edit(activeDraft.id, { date: event.target.value })}>
-                {!days.some((day) => day.toString() === activeDraft.date) && <option value={activeDraft.date} disabled>{activeDraft.date} · outside this week</option>}
+                {!days.some((day) => day.toString() === activeDraft.date) && <option value={activeDraft.date} disabled>{t("{date} · outside this week", { date: activeDraft.date })}</option>}
                 {days.map((day) => (
                   <option key={day.id} value={day.toString()} disabled={day < clock.date}>
-                    {day.toString([], { weekday: "short", month: "short", day: "numeric" })}
+                    {day.toString(locale, { weekday: "short", month: "short", day: "numeric" })}
                   </option>
                 ))}
               </select></label>
             </div>
             <div className="week-times">{(["start", "end"] as const).map((field) => (
               <div className="week-time-field" key={field}>
-                <label htmlFor={`week-slot-${field}`}>{field === "start" ? "Start" : "End"}</label>
+                <label htmlFor={`week-slot-${field}`}>{field === "start" ? t("Start") : t("End")}</label>
                 <div className="week-stepper">
-                  <button type="button" aria-label={`${field === "start" ? "Start" : "End"} 15 minutes earlier`}
+                  <button type="button" aria-label={field === "start" ? t("Start 15 minutes earlier") : t("End 15 minutes earlier")}
                     onClick={() => nudge(activeDraft, field, -15)}>−</button>
-                  <select id={`week-slot-${field}`} aria-label={`Selected slot ${field}`} value={activeDraft[field]}
+                  <select id={`week-slot-${field}`} aria-label={field === "start" ? t("Selected slot start") : t("Selected slot end")} value={activeDraft[field]}
                     onChange={(event) => edit(activeDraft.id, { [field]: event.target.value })}>
                     {(field === "start" ? TIMES.slice(0, -1) : TIMES.slice(1)).map((time) => <option key={+time} value={time.toString(true)}>
-                      {+time === 1440 ? "Midnight" : time.toString()}
+                      {+time === 1440 ? t("Midnight") : time.toString()}
                     </option>)}
                   </select>
-                  <button type="button" aria-label={`${field === "start" ? "Start" : "End"} 15 minutes later`}
+                  <button type="button" aria-label={field === "start" ? t("Start 15 minutes later") : t("End 15 minutes later")}
                     onClick={() => nudge(activeDraft, field, 15)}>+</button>
                 </div>
               </div>
@@ -300,25 +335,31 @@ export function WeekAvailabilityPanel({ open, onClose }: { open: boolean; onClos
               onClick={() => {
                 const draft = initialDraft(nextId.current++, now());
                 invalidate(); setDrafts((rows) => [...rows, draft]); setActiveId(draft.id);
-              }}>Enter a time manually</button>
-            <span className="week-selection-note">15-minute steps · up to 10 slots</span>
+              }}>{t("Enter a time manually")}</button>
+            <span className="week-selection-note">{t("15-minute steps · up to 10 slots")}</span>
           </div>
         </form>
         <div className="week-progress" role="status" aria-live="polite" ref={progressRef}>
-          {loading ? "Checking classroom schedules and Geisel reservations…" : results ?
-            `${results.campus.length} time slot${results.campus.length === 1 ? "" : "s"} checked at ${results.checkedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" })} PT · refreshes every minute` : ""}
+          {loading ? t("Checking classroom schedules and Geisel reservations…") : results ?
+            t(results.campus.length === 1
+              ? "{count} time slot checked at {time} PT · refreshes every minute"
+              : "{count} time slots checked at {time} PT · refreshes every minute", {
+              count: results.campus.length,
+              time: results.checkedAt.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" }),
+            }) : ""}
         </div>
         {results && <div className="week-results">{results.campus.map((campus, i) => (
           <RangeResults key={`${submitted?.map((r) => `${r.date}/${+r.start}/${+r.end}`).join(",")}:${i}`}
             campus={campus} library={results.library[i]} expired={validateWeekRange(campus.range, clock) !== null} />
         ))}</div>}
-        <p className="week-note week-disclaimer">Classrooms: no scheduled classes; access and other events are not tracked.
-          Geisel: live reservation availability. Choose the same time slot in LibCal to book; booking rules still apply.</p>
+        <p className="week-note week-disclaimer">{t("Classrooms: no scheduled classes; access and other events are not tracked. Geisel: live reservation availability. Choose the same time slot in LibCal to book; booking rules still apply.")}</p>
       </div>
       {/* Always in reach, however far the calendar and list are scrolled */}
       <footer className="week-footer">
         {error && <p className="week-error" role="alert">{error}</p>}
-        <button className="week-submit" type="submit" form={formId} disabled={drafts.length === 0 || loading}>{loading ? "Checking…" : results ? "Refresh availability" : `Find free spaces${drafts.length ? ` for ${drafts.length} slot${drafts.length === 1 ? "" : "s"}` : ""}`}</button>
+        <button className="week-submit" type="submit" form={formId} disabled={drafts.length === 0 || loading}>{loading ? t("Checking…") : results ? t("Refresh availability")
+          : !drafts.length ? t("Find free spaces")
+          : t(drafts.length === 1 ? "Find free spaces for {count} slot" : "Find free spaces for {count} slots", { count: drafts.length })}</button>
       </footer>
     </aside>
   );

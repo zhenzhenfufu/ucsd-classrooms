@@ -1,4 +1,5 @@
 import { Day } from "../../lib/Day";
+import { useLocale, useT } from "../../lib/i18n";
 import { meetingTypes } from "../../lib/meeting-types";
 import { useMoment } from "../../lib/moment-context";
 import { Course, Exam, Meeting, Section } from "../../lib/section-types";
@@ -17,6 +18,8 @@ export function MeetingCard({
   totalCapacity,
 }: MeetingCardProps) {
   const moment = useMoment();
+  const t = useT();
+  const locale = useLocale();
   const physicalRoom =
     meeting.location && meeting.location.building !== "RCLAS";
   const capacity =
@@ -25,7 +28,7 @@ export function MeetingCard({
   return (
     <section className="meeting-card">
       <p className="meeting-type">
-        {meetingTypes[meeting.type] ?? meeting.type}
+        {t(meetingTypes[meeting.type] ?? meeting.type)}
         {code && (
           <>
             <span className="colon">: </span>
@@ -36,10 +39,10 @@ export function MeetingCard({
       {capacity !== undefined && (
         <p className="meeting-column section-capacity">
           {capacity === Infinity ? (
-            "No limit"
+            t("No limit")
           ) : (
             <>
-              Capacity: <strong>{capacity}</strong>
+              {t("Capacity:")} <strong>{capacity}</strong>
             </>
           )}
         </p>
@@ -49,14 +52,14 @@ export function MeetingCard({
         {meeting.time && (
           <abbr
             title={meeting.time.days
-              .map((day) => Day.dayName(day, "long"))
-              .join(", ")}
+              .map((day) => Day.dayName(day, "long", locale))
+              .join(t(", "))}
           >
             {meeting.time.days.map((day) => webregDays[day]).join("")}
           </abbr>
         )}{" "}
         {meeting.kind === "exam"
-          ? meeting.date.toString([], { month: "short", day: "numeric" })
+          ? meeting.date.toString(locale, { month: "short", day: "numeric" })
           : null}{" "}
         {meeting.time && meeting.time.start.formatRange(meeting.time.end)}
         {meeting.time &&
@@ -67,8 +70,8 @@ export function MeetingCard({
           : meeting.time.days.includes(moment.date.day)) ? (
           <span
             className="live-marker"
-            title="Happening now"
-            aria-label="(Happening now)"
+            title={t("Happening now")}
+            aria-label={t("(Happening now)")}
           />
         ) : null}
       </p>
@@ -88,9 +91,9 @@ export function MeetingCard({
       >
         {meeting.location
           ? meeting.location.building === "RCLAS"
-            ? "Remote"
+            ? t("Remote")
             : `${meeting.location.building} ${meeting.location.room}`
-          : "TBA"}
+          : t("TBA")}
       </Link>
     </section>
   );
@@ -100,6 +103,7 @@ export type CourseInfoProps = {
   course: Course;
 };
 export function CourseInfo({ course }: CourseInfoProps) {
+  const t = useT();
   return (
     <div className="course-info">
       {course.groups.map((group) => {
@@ -125,7 +129,7 @@ export function CourseInfo({ course }: CourseInfoProps) {
                   </Link>
                 ))}
                 {group.instructors.length === 0 && (
-                  <span className="staff">Instructor TBA</span>
+                  <span className="staff">{t("Instructor TBA")}</span>
                 )}
               </div>
             </header>

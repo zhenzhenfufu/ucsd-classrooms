@@ -5,6 +5,7 @@ import {
   useUserLocation,
   walkingMinutes,
 } from "../../lib/geolocation";
+import { useT } from "../../lib/i18n";
 import { hasIndoorLayout } from "../../lib/indoor/manifest";
 
 type BuildingActionsProps = {
@@ -27,8 +28,9 @@ export function BuildingActions({
   onFreeOnly,
   explorerOpen,
   onExplorerEnabled_s,
-  freeTitle = "Only show classrooms with no class listed now",
+  freeTitle,
 }: BuildingActionsProps) {
+  const t = useT();
   const userLocation = useUserLocation();
   const [latitude, longitude] = building.location;
   const placed = latitude !== 0 || longitude !== 0;
@@ -44,11 +46,13 @@ export function BuildingActions({
           href={directionsUrl(building.location)}
           target="_blank"
           rel="noreferrer"
-          title="Walking directions in your maps app"
+          title={t("Walking directions in your maps app")}
         >
-          Directions
+          {t("Directions")}
           {distance !== null && (
-            <span className="action-btn-detail">{walkingMinutes(distance)} min</span>
+            <span className="action-btn-detail">
+              {t("{minutes} min", { minutes: walkingMinutes(distance) })}
+            </span>
           )}
           <svg viewBox="0 0 24 24" className="icon action-icon" aria-hidden="true">
             <path d="M7 7h10v10h-2V10.41l-8.29 8.3-1.42-1.42L13.59 9H7z" />
@@ -60,20 +64,20 @@ export function BuildingActions({
           className={`action-btn ${freeOnly ? "action-btn-on" : ""}`}
           aria-pressed={freeOnly}
           onClick={() => onFreeOnly(!freeOnly)}
-          title={freeTitle}
+          title={freeTitle ?? t("Only show classrooms with no class listed now")}
         >
-          Free now
+          {t("Free now")}
           <span className="action-count">{freeCount}</span>
         </button>
       )}
       {hasIndoorLayout(building.code) && (
-        <div className="segmented" role="group" aria-label="Room view">
+        <div className="segmented" role="group" aria-label={t("Room view")}>
           <button
             className="segment"
             aria-pressed={!explorerOpen}
             onClick={() => onExplorerEnabled_s(false)}
           >
-            List
+            {t("List")}
           </button>
           <button
             className="segment"

@@ -13,7 +13,7 @@ import {
 } from "../../lib/search";
 import { Course } from "../../lib/section-types";
 import { Term } from "../../lib/TermCache";
-import { termName } from "../../lib/terms";
+import { localTermName, useT } from "../../lib/i18n";
 import { View } from "../../lib/View";
 import { SearchResult } from "./SearchResult";
 
@@ -219,6 +219,7 @@ export function SearchResults({
   loadingCourses,
   onPick,
 }: SearchResultsProps) {
+  const t = useT();
   const searchIndex = useSearchIndex(data);
   const results = useMemo(
     () => search(searchIndex, data, query),
@@ -233,17 +234,23 @@ export function SearchResults({
     return (
       <p className="no-results" role="status">
         {loadingCourses
-          ? "Loading courses and professors…"
+          ? t("Loading courses and professors…")
           : ongoingOnly
-          ? "No courses with ongoing lectures match your search."
-          : `Nothing matches “${query.trim()}” in ${terms
-              .map(({ year, quarter }) => termName(year, quarter))
-              .join(" or ")}. Try a course code (CSE 100), a building (WLH), or a room (CENTR 115).`}
+          ? t("No courses with ongoing lectures match your search.")
+          : t(
+              "Nothing matches “{query}” in {terms}. Try a course code (CSE 100), a building (WLH), or a room (CENTR 115).",
+              {
+                query: query.trim(),
+                terms: terms
+                  .map(({ year, quarter }) => localTermName(t, year, quarter))
+                  .join(t(" or ")),
+              }
+            )}
       </p>
     );
   }
   return (
-    <div className="results" role="listbox" aria-label="Search results">
+    <div className="results" role="listbox" aria-label={t("Search results")}>
       {results.map((item, i) => (
         <SearchResultRow
           item={item}
@@ -255,7 +262,7 @@ export function SearchResults({
       ))}
       {loadingCourses && (
         <p className="results-loading" role="status">
-          Loading courses and professors…
+          {t("Loading courses and professors…")}
         </p>
       )}
     </div>
@@ -273,9 +280,10 @@ export function SearchResultRow({
   selected: boolean;
   onPick?: (item: ResultItem) => void;
 }) {
+  const t = useT();
   return (
     <>
-      {heading && <h2 className="result-heading">{item.section}</h2>}
+      {heading && <h2 className="result-heading">{t(item.section)}</h2>}
       <SearchResult
         name={item.primaryIsCode ? item.secondary : item.primary}
         code={item.primaryIsCode ? item.primary : item.secondary}

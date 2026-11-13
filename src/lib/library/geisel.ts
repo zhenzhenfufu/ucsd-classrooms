@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { GeiselDay } from "../../../worker/libcal";
 import { Day } from "../Day";
+import { Translate, translator } from "../i18n";
 import { RoomStatusKind } from "../indoor/roomStatus";
 import { Time } from "../Time";
 
@@ -195,15 +196,21 @@ export const STATUS_KIND: Record<SpaceStatus["kind"], RoomStatusKind> = {
   closed: "closed",
 };
 
-/** Short description, e.g. "Free until 6:00 pm". */
-export function describeStatus(status: SpaceStatus): string {
+/** Short description, e.g. "Free until 6:00 pm". Pass `t` for the UI language. */
+export function describeStatus(status: SpaceStatus, t: Translate = translator("en")): string {
   if (status.kind === "free") {
-    return +status.until >= 24 * 60 ? "Free rest of day" : `Free until ${status.until}`;
+    return +status.until >= 24 * 60
+      ? t("Free rest of day")
+      : t("Free until {time}", { time: status.until.toString() });
   }
   if (status.kind === "booked") {
-    return +status.until >= 24 * 60 ? "Booked rest of day" : `Booked until ${status.until}`;
+    return +status.until >= 24 * 60
+      ? t("Booked rest of day")
+      : t("Booked until {time}", { time: status.until.toString() });
   }
-  return status.nextFree ? `Not bookable, free at ${status.nextFree}` : "No free times left";
+  return status.nextFree
+    ? t("Not bookable, free at {time}", { time: status.nextFree.toString() })
+    : t("No free times left");
 }
 
 /** Consecutive slots with the same status, for a day timeline. */
