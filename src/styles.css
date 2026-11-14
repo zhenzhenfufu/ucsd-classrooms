@@ -1,6 +1,4 @@
 :root {
-  /* Median grass color of the campus map, used around it */
-  --map-ground: #839b5e;
   color-scheme: dark;
   --background: #182330;
   --text: rgba(255, 255, 255, 0.9);
@@ -219,7 +217,6 @@ input[type="checkbox"]:checked:hover {
 }
 .buildings {
   --map-zoom: 1;
-  background-color: var(--map-ground);
   flex: auto;
   position: relative;
   overflow: auto;
@@ -233,13 +230,7 @@ input[type="checkbox"]:checked:hover {
   display: none;
 }
 .scroll-area {
-  /*
-   * The campus map is transparent off campus. A small blurred copy of its
-   * edges sits underneath so grass and roads fade into a plain green instead
-   * of the page background.
-   */
-  background-color: var(--map-ground);
-  background-image: url("./assets/map.webp"), url("./assets/map-halo.webp");
+  background-image: url("./assets/map.webp");
   background-repeat: no-repeat;
   /* Smooth scaling holds up better than pixelated at arbitrary zoom levels */
   image-rendering: auto;
