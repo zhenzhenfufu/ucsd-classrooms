@@ -2543,3 +2543,48 @@ mark.result-match {
   color: var(--text);
   font: inherit;
 }
+
+/* Partial schedule load failure */
+.load-alert {
+  position: fixed;
+  z-index: 7;
+  left: 50%;
+  bottom: calc(var(--gutter) + var(--safe-bottom));
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(560px, calc(100% - 32px));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px 8px 14px;
+  border-radius: 10px;
+  border-left: 4px solid var(--red);
+  background-color: var(--modal);
+  box-shadow: var(--modal-shadow);
+  font-size: 14px;
+}
+.load-alert-text {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+.load-alert-retry {
+  flex: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: var(--link);
+  font-weight: 600;
+}
+.load-alert-retry:hover {
+  background-color: var(--icon-button-hover);
+}
+.load-alert-close {
+  flex: none;
+}
+@media (max-width: 690px) {
+  .load-alert {
+    top: calc(var(--gutter) + 94px);
+    bottom: auto;
+  }
+}

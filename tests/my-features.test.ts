@@ -4,6 +4,7 @@ import type { RoomMeeting } from "../src/lib/coursesToClassrooms";
 import { Day } from "../src/lib/Day";
 import { isFavorite, parseFavorites, toggledFavorites } from "../src/lib/favorites";
 import { buildIcs, escapeText, foldLine } from "../src/lib/ics";
+import { imageSrcSet, resizedImage } from "../src/lib/imgur";
 import { estimateSeats, fitsSeatFilter } from "../src/lib/roomSize";
 import { Time } from "../src/lib/Time";
 
@@ -95,5 +96,23 @@ describe("calendar export", () => {
       assert.ok(encoder.encode(line).length <= 75);
     }
     assert.equal(folded.split("\r\n ").join(""), "SUMMARY:" + "自习".repeat(40));
+  });
+});
+
+describe("Imgur photo sizes", () => {
+  it("asks Imgur for a resized copy", () => {
+    assert.equal(
+      resizedImage("https://i.imgur.com/2DncCdV.jpeg", "l"),
+      "https://i.imgur.com/2DncCdVl.jpeg"
+    );
+    assert.equal(
+      imageSrcSet("https://i.imgur.com/2DncCdV.jpeg", ["m", "l"]),
+      "https://i.imgur.com/2DncCdVm.jpeg 320w, https://i.imgur.com/2DncCdVl.jpeg 640w"
+    );
+  });
+
+  it("leaves other photos unchanged", () => {
+    assert.equal(resizedImage("https://example.com/a.jpg", "l"), "https://example.com/a.jpg");
+    assert.equal(imageSrcSet("https://example.com/a.jpg", ["l"]), undefined);
   });
 });

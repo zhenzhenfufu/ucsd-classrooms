@@ -470,6 +470,10 @@ export const ZH: Readonly<Record<string, string>> = {
   "UCSD Classroom Schedules": "UCSD 教室课表",
   "Select a building to view its rooms.": "选择一栋建筑查看其教室。",
   "Schedule data": "课表数据",
+  "Couldn't load {terms}, so some classes are missing and rooms may look free when they aren't.":
+    "{terms}的课表没能加载，部分课程缺失，有些教室可能显示空闲但其实有课。",
+  "Retry": "重试",
+  "Dismiss": "关闭",
 };
 
 /** BCP 47 locale for dates and times in a language. */

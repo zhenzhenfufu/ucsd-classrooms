@@ -6,18 +6,19 @@ import { CloseIcon } from "../icons/CloseIcon";
 import { findFreeRooms } from "./FreeRoomsPanel";
 
 type ChipFormats = {
-  time: Intl.DateTimeFormat;
   date: Intl.DateTimeFormat;
   shortDate: Intl.DateTimeFormat;
 };
 const formatsByLocale = new Map<string, ChipFormats>();
 
-/** Date and time formatters for a locale, created once each. */
+/**
+ * Date formatters for a locale, created once each. Times use `Time#toString`
+ * ("3:25 pm") so the chip matches room lists in both languages.
+ */
 function chipFormats(locale: string): ChipFormats {
   let formats = formatsByLocale.get(locale);
   if (!formats) {
     formats = {
-      time: new Intl.DateTimeFormat(locale, { timeStyle: "short" }),
       date: new Intl.DateTimeFormat(locale, {
         weekday: "short",
         month: "short",
@@ -61,7 +62,6 @@ export function MapChips({
   const lang = useLang();
   const t = translator(lang);
   const {
-    time: timeFormat,
     date: dateFormat,
     shortDate: shortDateFormat,
   } = chipFormats(locale(lang));
@@ -96,7 +96,7 @@ export function MapChips({
                 <span className="chip-long">{t("Now")}</span>
                 <span className="chip-dim">
                   <span className="chip-long"> · </span>
-                  {timeFormat.format(local)}
+                  {time.toString()}
                 </span>
               </span>
             </>
@@ -104,7 +104,7 @@ export function MapChips({
             <span>
               <span className="chip-long">{dateFormat.format(local)}</span>
               <span className="chip-short">{shortDateFormat.format(local)}</span>
-              <span className="chip-dim"> · {timeFormat.format(local)}</span>
+              <span className="chip-dim"> · {time.toString()}</span>
             </span>
           ) : (
             <span>{localTermName(t, currentTerm.year, currentTerm.season)}</span>

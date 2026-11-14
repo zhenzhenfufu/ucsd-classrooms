@@ -32,6 +32,7 @@ import { WeekAvailabilityPanel } from "./map/WeekAvailabilityPanel";
 import { ModalView, ResultModal } from "./search/ResultModal";
 import { SearchBar, State } from "./search/SearchBar";
 import { TermStatus } from "./TermStatus";
+import { CloseIcon } from "./icons/CloseIcon";
 import { useStableCallback } from "../lib/useStable";
 
 /**
@@ -117,11 +118,45 @@ export function App({ title }: AppProps) {
     }
   }, [realTime]);
 
+  /**
+   * What the tab title shows before the site name. Kept so the title can be
+   * redrawn when the language changes; `translated` marks UI text (as opposed
+   * to building, room, course or instructor names).
+   */
+  const titlePrefix = useRef<{ text: string; translated: boolean } | null>(null);
+  const applyTitle = (translate: Translate) => {
+    const prefix = titlePrefix.current;
+    const site = translate(title);
+    document.title = prefix
+      ? `${prefix.translated ? translate(prefix.text) : prefix.text} · ${site}`
+      : site;
+  };
+  const setTitle = (text: string | null, translated = false) => {
+    titlePrefix.current = text === null ? null : { text, translated };
+    applyTitle(t);
+  };
+  useEffect(() => {
+    applyTitle(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t]);
+
   const termCache = useRef(new TermCache());
   const [state, setState] = useState<AppState | null>(null);
 
-  // TODO: Show errors, if any, in a corner
   const noticeVisible = !state?.buildings;
+  /**
+   * Terms that failed to download while another term loaded. Rooms can look
+   * free when their classes are in the missing term, so say so. Terms that
+   * aren't published yet are already listed by the term status.
+   */
+  const offlineTerms = state?.buildings
+    ? state.errors.filter((error) => error.type === "offline")
+    : [];
+  const offlineKey = offlineTerms
+    .map(({ request }) => termCode(request.year, request.quarter))
+    .join(" ");
+  const [dismissedOffline, setDismissedOffline] = useState<string | null>(null);
+  const showOfflineAlert = offlineKey !== "" && dismissedOffline !== offlineKey;
   const notice = useLast(
     "",
     state === null
@@ -277,7 +312,7 @@ export function App({ title }: AppProps) {
     if (view.type === "default") {
       setModal(null);
       setBuildingCode(null);
-      document.title = title;
+      setTitle(null);
       return;
     }
     if (view.type === "building") {
@@ -293,11 +328,11 @@ export function App({ title }: AppProps) {
       setBuildingCode(view.building);
       setModal(null);
       setRoom(view.room ?? null);
-      document.title = `${
+      setTitle(
         view.room
           ? `${view.building} ${view.room}`
           : buildings[view.building]?.name ?? view.building
-      } · ${title}`;
+      );
       return;
     }
     setBuildingCode(null);
@@ -309,13 +344,13 @@ export function App({ title }: AppProps) {
       const course = courses.find((course) => course.code === view.course);
       if (course) {
         setModal({ type: "course", course });
-        document.title = `${view.course} · ${title}`;
+        setTitle(view.course);
       } else {
         setModal({
           type: "course",
           course: { code: view.course, title: view.course, groups: [] },
         });
-        document.title = `${t("Course not found")} · ${title}`;
+        setTitle("Course not found", true);
       }
     } else {
       const [last, first] = view.name.split(", ");
@@ -334,7 +369,7 @@ export function App({ title }: AppProps) {
           }),
         },
       });
-      document.title = `${first} ${last} · ${title}`;
+      setTitle(`${first} ${last}`);
     }
   });
 
@@ -576,6 +611,35 @@ export function App({ title }: AppProps) {
           >
             <span className="notice-text">{notice}</span>
           </p>
+          {showOfflineAlert && (
+            <div className="load-alert" role="alert">
+              <p className="load-alert-text">
+                {t(
+                  "Couldn't load {terms}, so some classes are missing and rooms may look free when they aren't.",
+                  {
+                    terms: offlineTerms
+                      .map(({ request }) => localTermName(t, request.year, request.quarter))
+                      .join(t(" and ")),
+                  }
+                )}
+              </p>
+              <button
+                type="button"
+                className="load-alert-retry"
+                onClick={() => handleDate(Day.fromId(momentDateId), viewingGenericDay)}
+              >
+                {t("Retry")}
+              </button>
+              <button
+                type="button"
+                className="icon-btn load-alert-close"
+                onClick={() => setDismissedOffline(offlineKey)}
+                aria-label={t("Dismiss")}
+              >
+                <CloseIcon />
+              </button>
+            </div>
+          )}
           <CampusMap
             termBuildings={state?.buildings}
             selected={buildingCode}

@@ -1,5 +1,6 @@
 import { BuildingDatum } from "../../lib/buildings";
 import { useT } from "../../lib/i18n";
+import { imageSrcSet, resizedImage } from "../../lib/imgur";
 import { useLast } from "../../lib/useLast";
 import { AbbrevHeading } from "../AbbrevHeading";
 import { BackIcon } from "../icons/BackIcon";
@@ -18,7 +19,8 @@ export function BuildingHeader({ building, room }: BuildingHeaderProps) {
   const { code, images, college, name } = building;
   const t = useT();
   const lastRoom = useLast("", room);
-  const imageUrl = images[0]?.url; // TODO: Compress
+  const original = images[0]?.url;
+  const imageUrl = original && resizedImage(original, "h");
   return (
     <header
       className={`building-name ${
@@ -29,6 +31,8 @@ export function BuildingHeader({ building, room }: BuildingHeaderProps) {
         <Image
           className="building-header-image"
           src={imageUrl}
+          srcSet={original && imageSrcSet(original, ["l", "h"])}
+          sizes="(max-width: 820px) 100vw, 820px"
           key={imageUrl}
         />
       )}

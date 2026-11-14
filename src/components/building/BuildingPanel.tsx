@@ -3,6 +3,7 @@ import { BuildingDatum } from "../../lib/buildings";
 import { getRoomActivity } from "../../lib/roomActivity";
 import { RoomMeeting } from "../../lib/coursesToClassrooms";
 import { Translate, useT } from "../../lib/i18n";
+import { imageSrcSet, resizedImage } from "../../lib/imgur";
 import { hasIndoorLayout } from "../../lib/indoor/manifest";
 import { computeCoverage, IndoorIndex, roomForKey } from "../../lib/indoor/roomMapping";
 import { ScheduleAvailability } from "../../lib/indoor/roomStatus";
@@ -205,7 +206,8 @@ function BuildingPanelContent({
           {images.length > 0 ? (
             <div className="building-images">
               {images.map((image) => {
-                const imageUrl = image.url; // TODO: Compress
+                // The link still opens the full-size original
+                const imageUrl = resizedImage(image.url, "l");
                 return (
                   <a
                     href={image.url}
@@ -216,6 +218,8 @@ function BuildingPanelContent({
                     <Image
                       className="building-image"
                       src={imageUrl}
+                      srcSet={imageSrcSet(image.url, ["m", "l"])}
+                      sizes="(max-width: 690px) 50vw, 280px"
                       loading="lazy"
                       width={image.size[0]}
                       height={image.size[1]}
