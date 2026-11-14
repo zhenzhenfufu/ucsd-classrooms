@@ -2588,3 +2588,13 @@ mark.result-match {
     bottom: auto;
   }
 }
+.room-saved-star {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-left: 4px;
+}
+.room-saved-star .icon {
+  width: 14px;
+  height: 14px;
+  fill: var(--soon);
+}

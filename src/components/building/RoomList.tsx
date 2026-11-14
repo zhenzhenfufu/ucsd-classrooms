@@ -1,11 +1,33 @@
 import { compareRoomNums } from "../../lib/compareRoomNums";
 import { RoomMeeting } from "../../lib/coursesToClassrooms";
-import { useT } from "../../lib/i18n";
+import { isFavorite, useFavorites } from "../../lib/favorites";
+import { Translate, useT } from "../../lib/i18n";
 import { ROOM_STATUS_TEXT, RoomStatusKind } from "../../lib/indoor/roomStatus";
 import { meetingTypes } from "../../lib/meeting-types";
 import { useMoment } from "../../lib/moment-context";
 import { getRoomActivity, nextMeetingToday } from "../../lib/roomActivity";
 import { Link } from "../Link";
+import { StarIcon } from "./FavoriteButton";
+
+/** Room name, with a star when the room is in the user's saved rooms. */
+function RoomName({ building, room, saved, t }: {
+  building: string;
+  room: string;
+  saved: boolean;
+  t: Translate;
+}) {
+  return (
+    <div className="room-name">
+      {building} {room}
+      {saved && (
+        <span className="room-saved-star" title={t("Saved")}>
+          <StarIcon filled />
+          <span className="visually-hidden">{t("Saved")}</span>
+        </span>
+      )}
+    </div>
+  );
+}
 
 function FreeUntil({ meetings }: { meetings: RoomMeeting[] }) {
   const moment = useMoment();
@@ -50,6 +72,7 @@ export function RoomList({
 }: RoomListProps) {
   const moment = useMoment();
   const t = useT();
+  const favorites = useFavorites();
   const isShown = (room: string) =>
     !freeOnly ||
     (!!rooms[room] && getRoomActivity(rooms[room], moment).type === "inactive");
@@ -83,9 +106,8 @@ export function RoomList({
           className={`room unlisted ${highlighted}`}
           {...hover}
         >
-          <div className="room-name">
-            {building} {room}
-          </div>
+          <RoomName building={building} room={room} t={t}
+            saved={isFavorite(favorites, building, room)} />
           <div className="current-meeting">
             {t(ROOM_STATUS_TEXT[emptyStatus ?? "none-listed"])}
           </div>
@@ -104,9 +126,8 @@ export function RoomList({
         } ${highlighted}`}
         {...hover}
       >
-        <div className="room-name">
-          {building} {room}
-        </div>
+        <RoomName building={building} room={room} t={t}
+          saved={isFavorite(favorites, building, room)} />
         {moment.type !== "term" ? (
           <div className="current-meeting">
             {activeMeeting ? (
