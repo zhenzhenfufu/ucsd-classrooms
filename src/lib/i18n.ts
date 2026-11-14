@@ -473,6 +473,9 @@ export const ZH: Readonly<Record<string, string>> = {
   "Couldn't load {terms}, so some classes are missing and rooms may look free when they aren't.":
     "{terms}的课表没能加载，部分课程缺失，有些教室可能显示空闲但其实有课。",
   "Retry": "重试",
+  "Add to calendar": "添加到日历",
+  "Add {name} to calendar": "将 {name} 添加到日历",
+  "Every class this quarter, skipping holidays, plus exams": "本学期每节课（跳过假日）和考试",
   "Dismiss": "关闭",
 };
 

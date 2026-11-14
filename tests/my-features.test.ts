@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { RoomMeeting } from "../src/lib/coursesToClassrooms";
+import { courseEvents, sectionChoices } from "../src/lib/courseCalendar";
 import { Day } from "../src/lib/Day";
+import { getHolidays } from "../src/lib/holidays";
 import { isFavorite, parseFavorites, toggledFavorites } from "../src/lib/favorites";
 import { buildIcs, escapeText, foldLine } from "../src/lib/ics";
 import { imageSrcSet, resizedImage } from "../src/lib/imgur";
 import { estimateSeats, fitsSeatFilter } from "../src/lib/roomSize";
+import { getTermDays } from "../src/lib/terms";
 import { Time } from "../src/lib/Time";
 
 describe("saved rooms", () => {
@@ -114,5 +117,98 @@ describe("Imgur photo sizes", () => {
   it("leaves other photos unchanged", () => {
     assert.equal(resizedImage("https://example.com/a.jpg", "l"), "https://example.com/a.jpg");
     assert.equal(imageSrcSet("https://example.com/a.jpg", ["l"]), undefined);
+  });
+});
+
+describe("course calendar export", () => {
+  const time = (days: number[], start: number, end: number) => ({
+    days,
+    start: Time.from(start),
+    end: Time.from(end),
+  });
+  const lecture = {
+    kind: "meeting" as const,
+    code: "A00",
+    type: "LE",
+    time: time([1, 3, 5], 10 * 60, 10 * 60 + 50),
+    location: { building: "CENTR", room: "115" },
+  };
+  const section = (code: string, day: number) => ({
+    kind: "section" as const,
+    code,
+    type: "DI",
+    capacity: 30,
+    time: time([day], 16 * 60, 16 * 60 + 50),
+    location: { building: "WLH", room: "2005" },
+  });
+  const final = {
+    kind: "exam" as const,
+    type: "FI",
+    date: Day.from(2026, 12, 9),
+    time: time([3], 11 * 60 + 30, 14 * 60 + 29),
+    location: { building: "CENTR", room: "115" },
+  };
+  const group = {
+    code: "A00",
+    sectionTitle: null,
+    sections: [section("A01", 2), section("A02", 4)],
+    meetings: [lecture],
+    exams: [final],
+    instructors: [{ first: "Ada", last: "Lovelace" }],
+    coscheduled: [],
+  };
+  const course = { code: "CSE 100", title: "Advanced Data Structures", groups: [group] };
+  const options = {
+    termDays: getTermDays(2026, "FA"),
+    season: "FA" as const,
+    typeName: (type: string) => type,
+    remote: "Remote",
+    tba: "TBA",
+  };
+
+  it("includes the lecture, only the chosen section, and the final", () => {
+    const events = courseEvents(course, group, group.sections[0], options);
+    assert.ok(events.some((event) => event.title === "CSE 100 DI (A01)"));
+    assert.ok(!events.some((event) => event.title.includes("A02")));
+    const finals = events.filter((event) => event.title === "CSE 100 FI");
+    assert.equal(finals.length, 1);
+    assert.equal(finals[0].date.toString(), "2026-12-09");
+    assert.equal(events[0].description, "Advanced Data Structures · Ada Lovelace");
+  });
+
+  it("skips holidays and stops before finals week", () => {
+    const events = courseEvents(course, group, group.sections[0], options);
+    const lectures = events.filter((event) => event.title === "CSE 100 LE");
+    const dates = new Set(lectures.map((event) => event.date.toString()));
+    // Veterans Day (Wednesday) and the day after Thanksgiving (Friday)
+    assert.ok(!dates.has("2026-11-11"));
+    assert.ok(!dates.has("2026-11-27"));
+    assert.ok(dates.has("2026-11-13"));
+    const finalsStart = options.termDays.finals;
+    assert.ok(lectures.every((event) => event.date < finalsStart));
+    assert.ok(lectures.every((event) => event.date >= options.termDays.start));
+  });
+
+  it("always includes a lecture listed as the group's own section", () => {
+    const lectureSection = { ...section("A00", 1), type: "LE", time: time([1, 3, 5], 9 * 60, 9 * 60 + 50) };
+    const withLecture = { ...group, meetings: [], sections: [lectureSection, section("A01", 1), section("A02", 4)] };
+    assert.deepEqual(sectionChoices(withLecture).map((s) => s.code), ["A01", "A02"]);
+    const titles = new Set(courseEvents(course, withLecture, withLecture.sections[1], options).map((e) => e.title));
+    assert.ok(titles.has("CSE 100 LE"));
+    assert.ok(titles.has("CSE 100 DI (A01)"));
+    assert.ok(!titles.has("CSE 100 DI (A02)"));
+  });
+
+  it("gives every event a unique id", () => {
+    const events = courseEvents(course, group, null, options);
+    assert.equal(new Set(events.map((event) => event.uid)).size, events.length);
+  });
+});
+
+describe("holidays", () => {
+  it("puts Veterans Day on November 11, not September 11", () => {
+    const holidays = getHolidays(2026);
+    assert.equal(holidays[Day.from(2026, 11, 11).id], "Veterans Day");
+    assert.equal(holidays[Day.from(2026, 9, 11).id], undefined);
   });
 });

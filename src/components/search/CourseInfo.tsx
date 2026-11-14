@@ -1,8 +1,12 @@
+import { ReactNode } from "react";
+import { courseEvents, courseFileName, sectionChoices } from "../../lib/courseCalendar";
 import { Day } from "../../lib/Day";
-import { useLocale, useT } from "../../lib/i18n";
+import { Translate, useLocale, useT } from "../../lib/i18n";
+import { downloadIcs } from "../../lib/ics";
 import { meetingTypes } from "../../lib/meeting-types";
-import { useMoment } from "../../lib/moment-context";
-import { Course, Exam, Meeting, Section } from "../../lib/section-types";
+import { TermMoment, useMoment } from "../../lib/moment-context";
+import { Course, Exam, Group, Meeting, Section } from "../../lib/section-types";
+import { CalendarIcon } from "../icons/CalendarIcon";
 import { Link } from "../Link";
 
 const webregDays = ["Sun", "M", "Tu", "W", "Th", "F", "S", "Sun"];
@@ -11,11 +15,14 @@ type MeetingCardProps = {
   meeting: Section | Meeting | Exam;
   code?: string | null;
   totalCapacity?: number;
+  /** Extra control at the end of the card, e.g. "Add to calendar". */
+  action?: ReactNode;
 };
 export function MeetingCard({
   meeting,
   code,
   totalCapacity,
+  action,
 }: MeetingCardProps) {
   const moment = useMoment();
   const t = useT();
@@ -95,8 +102,58 @@ export function MeetingCard({
             : `${meeting.location.building} ${meeting.location.room}`
           : t("TBA")}
       </Link>
+      {action}
     </section>
   );
+}
+
+/**
+ * Downloads this term's meetings as an .ics file: the shared lecture, the
+ * chosen section (all of them when null), and exams.
+ */
+function CourseCalendarButton({
+  course,
+  group,
+  section,
+  label,
+}: {
+  course: Course;
+  group: Group;
+  section: Section | null;
+  label?: boolean;
+}) {
+  const moment = useMoment();
+  const t = useT();
+  const name = `${course.code} ${section?.code ?? group.code}`;
+  return (
+    <button
+      type="button"
+      className={`course-calendar ${label ? "course-calendar-labeled" : ""}`}
+      onClick={() => downloadCourse(course, group, section, moment, t)}
+      aria-label={t("Add {name} to calendar", { name })}
+      title={t("Every class this quarter, skipping holidays, plus exams")}
+    >
+      <CalendarIcon />
+      {label && <span>{t("Add to calendar")}</span>}
+    </button>
+  );
+}
+
+function downloadCourse(
+  course: Course,
+  group: Group,
+  section: Section | null,
+  moment: TermMoment,
+  t: Translate
+) {
+  const events = courseEvents(course, group, section, {
+    termDays: moment.currentTerm.termDays,
+    season: moment.currentTerm.season,
+    typeName: (type) => t(meetingTypes[type] ?? type),
+    remote: t("Remote"),
+    tba: t("TBA"),
+  });
+  downloadIcs(courseFileName(course, group, section), events);
 }
 
 export type CourseInfoProps = {
@@ -132,6 +189,9 @@ export function CourseInfo({ course }: CourseInfoProps) {
                   <span className="staff">{t("Instructor TBA")}</span>
                 )}
               </div>
+              {sectionChoices(group).length <= 1 && (
+                <CourseCalendarButton course={course} group={group} section={null} label />
+              )}
             </header>
             {group.meetings.map((meeting, i) => (
               <MeetingCard
@@ -149,6 +209,12 @@ export function CourseInfo({ course }: CourseInfoProps) {
                 meeting={section}
                 code={section.code !== group.code ? section.code : null}
                 key={section.code}
+                action={
+                  section.code !== group.code &&
+                  sectionChoices(group).length > 1 && (
+                    <CourseCalendarButton course={course} group={group} section={section} />
+                  )
+                }
               />
             ))}
             {group.meetings.length > 0 && group.exams.length > 0 && (

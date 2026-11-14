@@ -26,7 +26,7 @@ export function getHolidays(year: number): Record<number, string> {
     [Day.from(year, 7, 4).id]: "Independence Day",
     // first Monday in September
     [Day.from(year, 9, 7).monday.id]: "Labor Day",
-    [Day.from(year, 9, 11).id]: "Veterans Day",
+    [Day.from(year, 11, 11).id]: "Veterans Day",
     // fourth Thursday of November
     [Day.from(year, 11, 7).last(4).add(21).id]: "Thanksgiving",
     [Day.from(year, 11, 7).last(4).add(22).id]: "Day after Thanksgiving",

@@ -2598,3 +2598,31 @@ mark.result-match {
   height: 14px;
   fill: var(--soon);
 }
+
+/* Add a course section to the calendar */
+.course-calendar {
+  flex: none;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 4px;
+  border-radius: 8px;
+  color: var(--link);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.course-calendar .icon {
+  width: 18px;
+  height: 18px;
+}
+.course-calendar-labeled {
+  align-self: flex-start;
+  padding: 4px 8px 4px 6px;
+  border: 1px solid var(--card-line);
+}
+.course-calendar:hover {
+  background-color: var(--icon-button-hover);
+}

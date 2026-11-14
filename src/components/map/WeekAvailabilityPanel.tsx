@@ -9,6 +9,7 @@ import { bookingUrl } from "../../lib/library/geisel";
 import { findWeekAvailability, WeekRangeResult } from "../../lib/library/weekAvailability";
 import { Moment, now } from "../../lib/now";
 import { Time } from "../../lib/Time";
+import { CalendarIcon } from "../icons/CalendarIcon";
 import { CloseIcon } from "../icons/CloseIcon";
 import { Link } from "../Link";
 import { WeekTimeCalendar } from "./WeekTimeCalendar";
@@ -58,9 +59,7 @@ function CalendarButton({ label, onClick }: { label: string; onClick: () => void
   const t = useT();
   return (
     <button type="button" className="week-ics" onClick={onClick} aria-label={label} title={t("Add to calendar (.ics)")}>
-      <svg viewBox="0 0 24 24" className="icon" aria-hidden="true">
-        <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14zm-8-8h2v3h3v2h-3v3h-2v-3H8v-2h3z" />
-      </svg>
+      <CalendarIcon />
     </button>
   );
 }
