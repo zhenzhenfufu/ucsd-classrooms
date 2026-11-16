@@ -215,4 +215,17 @@ export function fromTermId(id: number): { year: number; quarter: Season } {
   };
 }
 export const MIN_TERM_ID = getTermId(1995, "WI");
-export const MAX_TERM_ID = getTermId(2026, "FA");
+declare const LATEST_SCHEDULE_TERM: string;
+
+/**
+ * The newest term the picker offers: the latest published schedule found at
+ * build time (see scripts/build.mjs), and at least Fall 2026.
+ */
+function latestScheduleTermId(): number {
+  const latest =
+    typeof LATEST_SCHEDULE_TERM === "string" ? parseTermCode(LATEST_SCHEDULE_TERM) : null;
+  return latest && latest.quarter !== "S3" && latest.quarter !== "SU"
+    ? getTermId(latest.year, latest.quarter)
+    : -Infinity;
+}
+export const MAX_TERM_ID = Math.max(getTermId(2026, "FA"), latestScheduleTermId());

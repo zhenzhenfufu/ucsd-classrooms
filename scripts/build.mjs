@@ -29,6 +29,25 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 process.chdir(root);
 
 const serve = process.argv.includes("--serve");
+
+// The newest regular term with a published schedule caps the term picker, so
+// a refreshed schedule (e.g. next quarter) becomes selectable without a code
+// change. CI copies the schedule-data branch into static/schedules first.
+const SEASONS = ["WI", "SP", "S1", "S2", "FA"];
+const latestScheduleTerm = existsSync("static/schedules")
+  ? readdirSync("static/schedules")
+      .map((file) => file.match(/^classrooms-(WI|SP|S1|S2|FA)(\d\d)\.txt$/))
+      .filter(Boolean)
+      .map(([, season, yy]) => {
+        // Two-digit years from 64 on are 19xx (UCSD's records start in 1964)
+        const year = Number(yy) + (Number(yy) >= 64 ? 1900 : 2000);
+        return { code: season + yy, id: year * 5 + SEASONS.indexOf(season) };
+      })
+      .sort((a, b) => b.id - a.id)[0]?.code ?? ""
+  : "";
+if (!serve) {
+  console.log(`Latest schedule term: ${latestScheduleTerm || "(none found)"}`);
+}
 const SITE = "https://zhenzhenfufu.github.io/ucsd-classrooms/";
 
 /** @type {esbuild.BuildOptions} */
@@ -45,6 +64,7 @@ const options = {
   define: {
     // Only geometry-only display layouts are included in the website.
     LOCAL_INDOOR_MANIFEST: "{}",
+    LATEST_SCHEDULE_TERM: JSON.stringify(latestScheduleTerm),
     LIBCAL_PROXY_URL: JSON.stringify(
       process.env.LIBCAL_PROXY_URL ?? (serve ? "libcal/" : "")
     ),

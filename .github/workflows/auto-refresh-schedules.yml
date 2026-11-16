@@ -1,0 +1,121 @@
+name: Auto-refresh UCSD schedules
+
+# Weekly: fetch the current and next quarter's published schedules, publish
+# any newer snapshot to the schedule-data branch, and redeploy if anything
+# changed. Terms that aren't published yet are skipped, not failed.
+on:
+  schedule:
+    - cron: "17 13 * * 1" # Mondays, 6:17 am Pacific (daylight time)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-schedule-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.publish.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Pick the current and next terms
+        id: terms
+        run: |
+          npx --no-install esbuild scripts/upcoming-terms.ts --bundle --platform=node --format=esm --outfile=.test-build/upcoming-terms.mjs --log-level=warning
+          terms=$(node .test-build/upcoming-terms.mjs)
+          echo "Checking: $terms"
+          echo "terms=$terms" >> "$GITHUB_OUTPUT"
+      - name: Download the published snapshots
+        id: download
+        working-directory: tools/schedules
+        env:
+          TERMS: ${{ steps.terms.outputs.terms }}
+        run: |
+          mkdir -p output
+          found=""
+          for term in $TERMS; do
+            ok=1
+            for suffix in '' -full; do
+              file="classrooms-${term}${suffix}.txt"
+              if ! curl --fail --silent --location --retry 2 --max-time 60 \
+                "https://sheeptester.github.io/uxdy/data/$file" --output "output/$file"; then
+                ok=0
+              fi
+            done
+            if [[ $ok == 1 ]]; then
+              found="$found $term"
+            else
+              echo "$term isn't published yet; skipping it."
+              rm -f output/classrooms-"$term"*.txt
+            fi
+          done
+          echo "terms=${found# }" >> "$GITHUB_OUTPUT"
+      - name: Validate with the website parser
+        if: steps.download.outputs.terms != ''
+        run: |
+          npx --no-install esbuild scripts/validate-schedules.ts --bundle --platform=node --format=esm --outfile=.test-build/validate-schedules.mjs --log-level=warning
+          node .test-build/validate-schedules.mjs tools/schedules/output ${{ steps.download.outputs.terms }}
+      - name: Checkout the data branch
+        if: steps.download.outputs.terms != ''
+        uses: actions/checkout@v5
+        with:
+          ref: schedule-data
+          path: .test-build/schedule-data
+      - name: Publish newer snapshots
+        id: publish
+        if: steps.download.outputs.terms != ''
+        working-directory: .test-build/schedule-data
+        env:
+          TERMS: ${{ steps.download.outputs.terms }}
+        run: |
+          updated=""
+          for term in $TERMS; do
+            file="classrooms-${term}.txt"
+            if [[ -f "$file" ]]; then
+              read -r current < "$file"
+              read -r incoming < "../../tools/schedules/output/$file"
+              if (( ${incoming:2:13} <= ${current:2:13} )); then
+                echo "$term is already current."
+                continue
+              fi
+            fi
+            for suffix in '' -full; do
+              cp "../../tools/schedules/output/classrooms-${term}${suffix}.txt" .
+              git add -- "classrooms-${term}${suffix}.txt"
+            done
+            updated="$updated $term"
+          done
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "Refresh${updated} schedules (automatic)"
+          git push origin HEAD:refs/heads/schedule-data
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: refresh
+    if: needs.refresh.outputs.changed == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/gh-pages.yml
