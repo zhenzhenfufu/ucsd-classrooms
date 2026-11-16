@@ -23,6 +23,7 @@ import {
   ZOOM,
 } from "../../lib/locations";
 import { BuildingButton } from "../BuildingButton";
+import { MapTiles } from "./MapTiles";
 
 /** Unzoomed size of the scrollable map, in px. */
 const MAP_WIDTH = northeast.x - southwest.x + PADDING.horizontal * 2;
@@ -336,7 +337,9 @@ export function CampusMap({
             backgroundSize: `calc(${mapPosition.width}px * var(--map-zoom))`,
             backgroundPosition: `calc(${mapPosition.x}px * var(--map-zoom)) calc(${mapPosition.y}px * var(--map-zoom))`,
           }}
-        />
+        >
+          <MapTiles scroller={ref} />
+        </div>
         {userPoint && userOnMap && (
           <div
             className="user-location"

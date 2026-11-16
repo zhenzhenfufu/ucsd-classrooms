@@ -231,13 +231,29 @@ input[type="checkbox"]:checked:hover {
 }
 .scroll-area {
   /*
-   * A 1024px copy of the map loads first and sits underneath, so the map
-   * shows right away on slow connections; the full map covers it exactly.
+   * A 1024px copy of the whole map loads first and sits underneath, so the map
+   * shows right away; full-detail tiles (MapTiles) cover it as they load.
    */
-  background-image: url("./assets/map.webp"), url("./assets/map-preview.webp");
+  position: relative;
+  overflow: hidden;
+  background-image: url("./assets/map-preview.webp");
   background-repeat: no-repeat;
   /* Smooth scaling holds up better than pixelated at arbitrary zoom levels */
   image-rendering: auto;
+}
+.map-tiles {
+  position: absolute;
+  pointer-events: none;
+}
+.map-tiles img {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.2s;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.map-tiles img.loaded {
+  opacity: 1;
 }
 .building-btn {
   font-family: var(--narrow);

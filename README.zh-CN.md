@@ -98,6 +98,7 @@ Geisel 实时空闲情况还需要一个小组件：LibCal 不允许其他网站
 | `static/indoor/` | 打开相应楼宇时按需加载的室内布局 |
 | `static/indoor/facilities/` | 已发布的 Facilities 布局及楼宇索引 |
 | `static/campus/` | 公共校园地图中的建筑轮廓及地面、屋顶高程 |
+| `static/map-tiles/` | 切成 36 块的校园地图，滚动到附近时才加载（由 `tools/map-tiles.py` 从 `data/map/map.webp` 切出） |
 | `scripts/` | 跨平台构建与室内数据处理脚本 |
 | `tools/indoor-trace/` | 描摹公共楼层平面图的 Python 辅助工具 |
 | `tests/` | 室内几何、房间状态和导航测试 |

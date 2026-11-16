@@ -250,3 +250,18 @@ describe("shared room filters", () => {
     assert.equal(matchesRoomFilters({ area: "sio", minSeats: 0 }, ["muir"], "APM", null), true);
   });
 });
+
+describe("campus map tiles", () => {
+  it("has a tile for every grid cell, cut with the same grid", async () => {
+    const { existsSync, readFileSync } = await import("node:fs");
+    const { MAP_TILE_GRID, mapTileUrl } = await import("../src/components/map/MapTiles");
+    const script = readFileSync("tools/map-tiles.py", "utf8");
+    assert.equal(Number(script.match(/^GRID = (\d+)$/m)?.[1]), MAP_TILE_GRID);
+    for (let row = 0; row < MAP_TILE_GRID; row++) {
+      for (let col = 0; col < MAP_TILE_GRID; col++) {
+        const file = mapTileUrl(row, col).replace(/^\.\//, "static/");
+        assert.ok(existsSync(file), `${file} is missing; run python3 tools/map-tiles.py`);
+      }
+    }
+  });
+});

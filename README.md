@@ -108,6 +108,7 @@ When deploying a different fork, update the site URL in `scripts/build.mjs`, the
 | `static/indoor/` | Runtime layouts fetched when a mapped building opens |
 | `static/indoor/facilities/` | Published Facilities layouts and their building index |
 | `static/campus/` | Public campus-map footprints and ground/roof elevations |
+| `static/map-tiles/` | The campus map in 36 tiles, loaded as they scroll into view (cut from `data/map/map.webp` by `tools/map-tiles.py`) |
 | `scripts/` | Cross-platform build and indoor-data tooling |
 | `tools/indoor-trace/` | Python helpers for tracing public floor maps |
 | `tests/` | Indoor geometry, room status, and navigation tests |
