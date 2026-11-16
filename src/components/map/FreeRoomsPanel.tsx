@@ -14,11 +14,13 @@ import { FavoriteRoom, toggleFavorite, useFavorites } from "../../lib/favorites"
 import { useT } from "../../lib/i18n";
 import { getRoomActivity, nextMeetingToday } from "../../lib/roomActivity";
 import { estimateSeats, fitsSeatFilter, SEAT_FILTERS } from "../../lib/roomSize";
+import { AREAS, availableAreas } from "../../lib/areas";
 import { StarIcon } from "../building/FavoriteButton";
 import { CloseIcon } from "../icons/CloseIcon";
 import { Link } from "../Link";
 
 const SEATS_KEY = "ucsd-classrooms:free-room-seats";
+const AREA_KEY = "ucsd-classrooms:free-room-area";
 
 /** Gaps shorter than this aren't worth walking to. */
 const MIN_FREE_MINUTES = 20;
@@ -39,13 +41,15 @@ export function findFreeRooms(
   termBuildings: TermBuildings,
   moment: TermMoment,
   location: [number, number] | null,
-  minSeats = 0
+  minSeats = 0,
+  /** Only rooms in this part of campus (see `AREAS`); empty for anywhere. */
+  area = ""
 ): FreeRoom[] {
   const now = +moment.time;
   const rooms: FreeRoom[] = [];
   for (const [code, termRooms] of Object.entries(termBuildings)) {
     const building = buildings[code];
-    if (!building) {
+    if (!building || (area && building.college !== area)) {
       continue;
     }
     const distance = location ? distanceMeters(location, building.location) : null;
@@ -71,6 +75,14 @@ export function findFreeRooms(
       a.building.localeCompare(b.building) ||
       compareRoomNums(a.room, b.room)
   );
+}
+
+function readArea(): string {
+  try {
+    return window.localStorage.getItem(AREA_KEY) ?? "";
+  } catch {
+    return "";
+  }
 }
 
 function readMinSeats(): number {
@@ -185,13 +197,20 @@ export function FreeRoomsPanel({ termBuildings, open, onClose }: FreeRoomsPanelP
   const datedMoment = moment.type !== "term";
   const favorites = useFavorites();
   const [minSeats, setMinSeats] = useState(readMinSeats);
+  const [storedArea, setArea] = useState(readArea);
+  const areas = useMemo(
+    () => (termBuildings ? availableAreas(termBuildings) : []),
+    [termBuildings]
+  );
+  // A remembered area without classes this term counts as anywhere
+  const area = areas.includes(storedArea) ? storedArea : "";
 
   const rooms = useMemo(
     () =>
       open && termBuildings && datedMoment
-        ? findFreeRooms(termBuildings, moment, location, minSeats).slice(0, MAX_RESULTS)
+        ? findFreeRooms(termBuildings, moment, location, minSeats, area).slice(0, MAX_RESULTS)
         : [],
-    [open, termBuildings, datedMoment, moment, location, minSeats]
+    [open, termBuildings, datedMoment, moment, location, minSeats, area]
   );
 
   return (
@@ -238,6 +257,28 @@ export function FreeRoomsPanel({ termBuildings, open, onClose }: FreeRoomsPanelP
               : t("Show nearest first")}
           </button>
         )}
+        <label className="free-rooms-seats" title={t("Only show rooms in one part of campus")}>
+            <span>{t("Area")}</span>
+            <select
+              value={area}
+              onChange={(event) => {
+                const value = event.target.value;
+                setArea(value);
+                try {
+                  window.localStorage.setItem(AREA_KEY, value);
+                } catch {
+                  // Storage may be unavailable; the filter lasts this session
+                }
+              }}
+            >
+              <option value="">{t("Anywhere")}</option>
+              {AREAS.filter(({ id }) => areas.includes(id)).map(({ id, label }) => (
+                <option key={id} value={id}>
+                  {t(label)}
+                </option>
+              ))}
+            </select>
+          </label>
         <label
             className="free-rooms-seats"
             title={t("Rooms whose largest scheduled class is at least this size")}
@@ -269,8 +310,8 @@ export function FreeRoomsPanel({ termBuildings, open, onClose }: FreeRoomsPanelP
         </p>
       ) : rooms.length === 0 ? (
         <p className="free-rooms-empty">
-          {minSeats > 0
-            ? t("No free rooms with {seats}+ seats found for this time.", { seats: minSeats })
+          {area || minSeats > 0
+            ? t("No free rooms match these filters right now. Try another area or size.")
             : t("No free rooms found for this time.")}
         </p>
       ) : (

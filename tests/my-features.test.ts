@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 import type { RoomMeeting } from "../src/lib/coursesToClassrooms";
 import { courseEvents, sectionChoices } from "../src/lib/courseCalendar";
 import { Day } from "../src/lib/Day";
+import { areaOf, AREAS, availableAreas } from "../src/lib/areas";
+import { buildings } from "../src/lib/buildings";
 import { getHolidays } from "../src/lib/holidays";
 import { isFavorite, parseFavorites, toggledFavorites } from "../src/lib/favorites";
 import { buildIcs, escapeText, foldLine } from "../src/lib/ics";
@@ -210,5 +212,24 @@ describe("holidays", () => {
     const holidays = getHolidays(2026);
     assert.equal(holidays[Day.from(2026, 11, 11).id], "Veterans Day");
     assert.equal(holidays[Day.from(2026, 9, 11).id], undefined);
+  });
+});
+
+describe("campus areas", () => {
+  it("knows which area a building is in", () => {
+    assert.equal(areaOf("CENTR"), "universityCenter");
+    assert.equal(areaOf("APM"), "muir");
+    assert.equal(areaOf("NOPE"), null);
+  });
+
+  it("lists only areas with classes, in campus order", () => {
+    const rooms = { "101": [] as never[] };
+    assert.deepEqual(availableAreas({ CENTR: rooms, APM: rooms, WLH: {} }), ["muir", "universityCenter"]);
+  });
+
+  it("covers every group of buildings with classrooms except the library", () => {
+    const groups = new Set(Object.values(buildings).map((b) => b.college));
+    groups.delete("library");
+    assert.deepEqual([...groups].sort(), AREAS.map((a) => a.id).sort());
   });
 });
