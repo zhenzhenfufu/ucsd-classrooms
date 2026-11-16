@@ -35,7 +35,8 @@ describe("campus interval availability", () => {
       course([meeting("101", 615, 630), meeting("102", 700, 760)]),
     ]));
     assert.equal(result.state, "ready");
-    assert.deepEqual(result.rooms, [{ building: "CENTR", room: "102" }]);
+    // The fixture lists no section capacities, so there is no size estimate
+    assert.deepEqual(result.rooms, [{ building: "CENTR", room: "102", seats: null }]);
   });
 
   it("allows touching endpoints without applying the instant-view soon buffer", async () => {

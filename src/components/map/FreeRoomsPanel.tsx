@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { buildings } from "../../lib/buildings";
 import { compareRoomNums } from "../../lib/compareRoomNums";
 import { RoomMeeting, TermBuildings } from "../../lib/coursesToClassrooms";
@@ -13,14 +13,14 @@ import { TermMoment, useMoment } from "../../lib/moment-context";
 import { FavoriteRoom, toggleFavorite, useFavorites } from "../../lib/favorites";
 import { useT } from "../../lib/i18n";
 import { getRoomActivity, nextMeetingToday } from "../../lib/roomActivity";
-import { estimateSeats, fitsSeatFilter, SEAT_FILTERS } from "../../lib/roomSize";
-import { AREAS, availableAreas } from "../../lib/areas";
+import { estimateSeats, fitsSeatFilter } from "../../lib/roomSize";
+import { availableAreas } from "../../lib/areas";
+import { useRoomFilters } from "../../lib/roomFilters";
+import { RoomFilterControls } from "./RoomFilterControls";
 import { StarIcon } from "../building/FavoriteButton";
 import { CloseIcon } from "../icons/CloseIcon";
 import { Link } from "../Link";
 
-const SEATS_KEY = "ucsd-classrooms:free-room-seats";
-const AREA_KEY = "ucsd-classrooms:free-room-area";
 
 /** Gaps shorter than this aren't worth walking to. */
 const MIN_FREE_MINUTES = 20;
@@ -75,23 +75,6 @@ export function findFreeRooms(
       a.building.localeCompare(b.building) ||
       compareRoomNums(a.room, b.room)
   );
-}
-
-function readArea(): string {
-  try {
-    return window.localStorage.getItem(AREA_KEY) ?? "";
-  } catch {
-    return "";
-  }
-}
-
-function readMinSeats(): number {
-  try {
-    const stored = Number(window.localStorage.getItem(SEATS_KEY));
-    return (SEAT_FILTERS as readonly number[]).includes(stored) ? stored : 0;
-  } catch {
-    return 0;
-  }
 }
 
 /** What the schedule says about a saved room at the selected time. */
@@ -196,14 +179,14 @@ export function FreeRoomsPanel({ termBuildings, open, onClose }: FreeRoomsPanelP
   const location = userLocation.type === "located" ? userLocation.location : null;
   const datedMoment = moment.type !== "term";
   const favorites = useFavorites();
-  const [minSeats, setMinSeats] = useState(readMinSeats);
-  const [storedArea, setArea] = useState(readArea);
+  const filters = useRoomFilters();
   const areas = useMemo(
     () => (termBuildings ? availableAreas(termBuildings) : []),
     [termBuildings]
   );
   // A remembered area without classes this term counts as anywhere
-  const area = areas.includes(storedArea) ? storedArea : "";
+  const area = areas.includes(filters.area) ? filters.area : "";
+  const { minSeats } = filters;
 
   const rooms = useMemo(
     () =>
@@ -257,52 +240,7 @@ export function FreeRoomsPanel({ termBuildings, open, onClose }: FreeRoomsPanelP
               : t("Show nearest first")}
           </button>
         )}
-        <label className="free-rooms-seats" title={t("Only show rooms in one part of campus")}>
-            <span>{t("Area")}</span>
-            <select
-              value={area}
-              onChange={(event) => {
-                const value = event.target.value;
-                setArea(value);
-                try {
-                  window.localStorage.setItem(AREA_KEY, value);
-                } catch {
-                  // Storage may be unavailable; the filter lasts this session
-                }
-              }}
-            >
-              <option value="">{t("Anywhere")}</option>
-              {AREAS.filter(({ id }) => areas.includes(id)).map(({ id, label }) => (
-                <option key={id} value={id}>
-                  {t(label)}
-                </option>
-              ))}
-            </select>
-          </label>
-        <label
-            className="free-rooms-seats"
-            title={t("Rooms whose largest scheduled class is at least this size")}
-          >
-            <span>{t("Seats")}</span>
-            <select
-              value={minSeats}
-              onChange={(event) => {
-                const value = Number(event.target.value);
-                setMinSeats(value);
-                try {
-                  window.localStorage.setItem(SEATS_KEY, String(value));
-                } catch {
-                  // Storage may be unavailable; the filter lasts this session
-                }
-              }}
-            >
-              {SEAT_FILTERS.map((seats) => (
-                <option key={seats} value={seats}>
-                  {seats === 0 ? t("Any size") : `${seats}+`}
-                </option>
-              ))}
-            </select>
-          </label>
+        <RoomFilterControls areas={areas} />
       </div>}
       {!datedMoment ? (
         <p className="free-rooms-empty">

@@ -472,6 +472,7 @@ export const ZH: Readonly<Record<string, string>> = {
     "{terms}的课表没能加载，部分课程缺失，有些教室可能显示空闲但其实有课。",
   "Retry": "重试",
   "Area": "区域",
+  "No classroom in this area and size is free for the whole slot.": "这个区域和座位数下，没有整段时间都空闲的教室。",
   "Anywhere": "全部区域",
   "Only show rooms in one part of campus": "只看校园某个区域的教室",
   "No free rooms match these filters right now. Try another area or size.": "现在没有符合筛选条件的空教室，换个区域或座位数试试。",

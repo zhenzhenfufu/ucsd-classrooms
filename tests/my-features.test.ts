@@ -233,3 +233,20 @@ describe("campus areas", () => {
     assert.deepEqual([...groups].sort(), AREAS.map((a) => a.id).sort());
   });
 });
+
+describe("shared room filters", () => {
+  it("matches by area and estimated size", async () => {
+    const { matchesRoomFilters } = await import("../src/lib/roomFilters");
+    const areas = ["muir", "universityCenter"];
+    assert.equal(matchesRoomFilters({ area: "", minSeats: 0 }, areas, "APM", null), true);
+    assert.equal(matchesRoomFilters({ area: "muir", minSeats: 0 }, areas, "APM", 40), true);
+    assert.equal(matchesRoomFilters({ area: "muir", minSeats: 0 }, areas, "CENTR", 196), false);
+    assert.equal(matchesRoomFilters({ area: "", minSeats: 100 }, areas, "APM", 40), false);
+    assert.equal(matchesRoomFilters({ area: "", minSeats: 100 }, areas, "CENTR", null), false);
+  });
+
+  it("treats a remembered area that isn't offered as anywhere", async () => {
+    const { matchesRoomFilters } = await import("../src/lib/roomFilters");
+    assert.equal(matchesRoomFilters({ area: "sio", minSeats: 0 }, ["muir"], "APM", null), true);
+  });
+});

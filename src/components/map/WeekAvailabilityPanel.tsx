@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useMemo } from "react";
 import { AvailabilityRange, validateWeekRange } from "../../lib/availabilityRanges";
 import { buildings } from "../../lib/buildings";
 import { CampusRangeAvailability, findCampusWeekAvailability } from "../../lib/campusWeekAvailability";
@@ -9,9 +9,12 @@ import { bookingUrl } from "../../lib/library/geisel";
 import { findWeekAvailability, WeekRangeResult } from "../../lib/library/weekAvailability";
 import { Moment, now } from "../../lib/now";
 import { Time } from "../../lib/Time";
+import { AREAS, areaOf } from "../../lib/areas";
+import { matchesRoomFilters, useRoomFilters } from "../../lib/roomFilters";
 import { CalendarIcon } from "../icons/CalendarIcon";
 import { CloseIcon } from "../icons/CloseIcon";
 import { Link } from "../Link";
+import { RoomFilterControls } from "./RoomFilterControls";
 import { WeekTimeCalendar } from "./WeekTimeCalendar";
 import "./weekAvailability.css";
 
@@ -64,13 +67,17 @@ function CalendarButton({ label, onClick }: { label: string; onClick: () => void
   );
 }
 
-function RangeResults({ campus, library, expired }: {
+function RangeResults({ campus, library, expired, areas }: {
   campus: CampusRangeAvailability;
   library: WeekRangeResult;
   expired: boolean;
+  /** Areas offered by the filter, for matching a remembered choice. */
+  areas: readonly string[];
 }) {
   const [limit, setLimit] = useState(20);
   const t = useT();
+  const filters = useRoomFilters();
+  const rooms = campus.rooms.filter(({ building, seats }) => matchesRoomFilters(filters, areas, building, seats));
   const locale = useLocale();
   const range = campus.range;
   const title = rangeTitle(range, t, locale);
@@ -79,7 +86,7 @@ function RangeResults({ campus, library, expired }: {
       <h3>{title}</h3>
       {expired ? <p className="week-note">{t("This time slot has started or passed. Choose a future slot to check again.")}</p> : <>
         <div className="week-result-counts">
-          <span>{campus.state === "ready" ? t("{count} classrooms", { count: campus.rooms.length }) : t("Classrooms unavailable")}</span>
+          <span>{campus.state === "ready" ? t("{count} classrooms", { count: rooms.length }) : t("Classrooms unavailable")}</span>
           <span>{library.state === "ready" ? t("{count} Geisel rooms", { count: library.spaces.length }) : t("Geisel unavailable")}</span>
         </div>
         <details className="week-source-results" open={library.state !== "ready" || library.spaces.length > 0}>
@@ -105,19 +112,21 @@ function RangeResults({ campus, library, expired }: {
           <summary>{t("Classrooms · no class scheduled during the slot")}</summary>
           {campus.state !== "ready" ? <p className="week-note">{t(campus.error ?? "Complete schedules are unavailable for this date.")}</p>
             : campus.rooms.length === 0 ? <p className="week-note">{t("No classroom has this entire time slot clear in the loaded schedules.")}</p>
+            : rooms.length === 0 ? <p className="week-note">{t("No classroom in this area and size is free for the whole slot.")}</p>
             : <>
-              <ul className="week-room-list">{campus.rooms.slice(0, limit).map(({ building, room }) => (
+              <ul className="week-room-list">{rooms.slice(0, limit).map(({ building, room, seats }) => (
                 <li key={`${building}/${room}`}>
                   <Link view={{ type: "building", building, room }} term={{ date: range.date, time: range.start }}>
-                    <strong>{building} {room}</strong><small>{buildings[building]?.name}</small>
+                    <strong>{building} {room}</strong>
+                    <small>{[buildings[building]?.name, seats !== null ? t("~{seats} seats", { seats }) : null].filter(Boolean).join(" · ")}</small>
                   </Link>
                   <CalendarButton label={t("Add {name} on {when} to calendar", { name: `${building} ${room}`, when: title })}
                     onClick={() => addToCalendar(range, building, room, t("Study · {place}", { place: `${building} ${room}` }),
                       `${building} ${room}${buildings[building] ? `, ${buildings[building].name}` : ""}, UC San Diego`, t)} />
                 </li>
               ))}</ul>
-              {limit < campus.rooms.length && <button type="button" className="week-secondary"
-                onClick={() => setLimit((n) => n + 20)}>{t("Show more ({count} remaining)", { count: campus.rooms.length - limit })}</button>}
+              {limit < rooms.length && <button type="button" className="week-secondary"
+                onClick={() => setLimit((n) => n + 20)}>{t("Show more ({count} remaining)", { count: rooms.length - limit })}</button>}
             </>}
         </details>
       </>}
@@ -140,6 +149,11 @@ export function WeekAvailabilityPanel({ open, onClose }: { open: boolean; onClos
   const requestVersion = useRef(0);
   const [submitted, setSubmitted] = useState<AvailabilityRange[] | null>(null);
   const [results, setResults] = useState<Results | null>(null);
+  // Areas with a free classroom in any checked slot, in campus order
+  const resultAreas = useMemo(() => {
+    const present = new Set(results?.campus.flatMap((c) => c.rooms.map((r) => areaOf(r.building))));
+    return AREAS.map((area) => area.id).filter((id) => present.has(id));
+  }, [results]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const week = clock.date.monday;
@@ -347,9 +361,11 @@ export function WeekAvailabilityPanel({ open, onClose }: { open: boolean; onClos
               time: results.checkedAt.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" }),
             }) : ""}
         </div>
+        {results && <div className="week-filters"><RoomFilterControls areas={resultAreas} /></div>}
         {results && <div className="week-results">{results.campus.map((campus, i) => (
           <RangeResults key={`${submitted?.map((r) => `${r.date}/${+r.start}/${+r.end}`).join(",")}:${i}`}
-            campus={campus} library={results.library[i]} expired={validateWeekRange(campus.range, clock) !== null} />
+            campus={campus} library={results.library[i]} expired={validateWeekRange(campus.range, clock) !== null}
+            areas={resultAreas} />
         ))}</div>}
         <p className="week-note week-disclaimer">{t("Classrooms: no scheduled classes; access and other events are not tracked. Geisel: live reservation availability. Choose the same time slot in LibCal to book; booking rules still apply.")}</p>
       </div>

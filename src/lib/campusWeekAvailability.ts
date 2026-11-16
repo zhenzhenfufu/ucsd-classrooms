@@ -3,11 +3,17 @@ import { buildings } from "./buildings";
 import { compareRoomNums } from "./compareRoomNums";
 import { coursesToClassrooms, type TermBuildings } from "./coursesToClassrooms";
 import { getHolidays } from "./holidays";
+import { estimateSeats } from "./roomSize";
 import { doesMeetingHappen, fromViewTerm } from "./moment-context";
 import { TermCache, type Term, type TermResults } from "./TermCache";
 import { getTerm, termCode, type CurrentTerm } from "./terms";
 
-export type CampusAvailableRoom = { building: string; room: string };
+export type CampusAvailableRoom = {
+  building: string;
+  room: string;
+  /** Largest class scheduled in the room this term, as a rough size. */
+  seats: number | null;
+};
 export type CampusRangeAvailability = {
   range: AvailabilityRange;
   /** Rooms with no scheduled meeting overlapping this entire interval. */
@@ -116,7 +122,7 @@ export async function findCampusWeekAvailability(
           doesMeetingHappen(meeting, moment, range.date, meeting.special) &&
           meeting.time.start < range.end && range.start < meeting.time.end
         );
-        if (!conflict) rooms.push({ building, room });
+        if (!conflict) rooms.push({ building, room, seats: estimateSeats(meetings) });
       }
     }
     rooms.sort((a, b) => a.building.localeCompare(b.building) || compareRoomNums(a.room, b.room));

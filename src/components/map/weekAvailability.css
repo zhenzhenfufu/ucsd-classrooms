@@ -98,3 +98,4 @@
 .week-ics .icon { width: 18px; height: 18px; fill: currentColor; }
 .week-ics:hover { background-color: var(--icon-button-hover); }
 .week-room-list li > .week-ics + .week-book { margin-left: -6px; }
+.week-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 10px; }
